@@ -74,33 +74,19 @@ GenerationPage (Astro/React Root)
 - **Główne elementy:** `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter`, `Button` (wszystko z Shadcn/ui). Wyświetla `front` i `back`. Style przycisków/karty zmieniają się w zależności od statusu.
 - **Obsługiwane interakcje:** Kliknięcie przycisków "Akceptuj", "Odrzuć", "Edytuj" wywołuje odpowiednie funkcje przekazane przez propsy (`onAccept`, `onReject`, `onEdit`).
 - **Obsługiwana walidacja:** Brak.
-- **Typy:** `FlashcardProposalViewModel`.
+- **Typy:** `FlashcardProposalViewModel`, lokalny model stanu
 - **Propsy:**
     - `proposal: FlashcardProposalViewModel`
     - `onAccept: (id: string) => void`
     - `onReject: (id: string) => void`
     - `onEdit: (id: string) => void`
 
-### `EditProposalModal` (React Component)
-- **Opis:** Modal (dialog) do edycji treści (front/back) wybranej propozycji fiszki. Używa komponentu `Dialog` z Shadcn/ui. Zawiera przyciski "Zapisz zmiany" i "Anuluj".
-- **Główne elementy:** `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `Label`, `Textarea` (dla front i back), `DialogFooter`, `Button` (wszystko z Shadcn/ui).
-- **Obsługiwane interakcje:**
-    - Zapisanie zmian: Waliduje pola, wywołuje `onSave` z ID i nową treścią.
-    - Anulowanie: Wywołuje `onCancel`.
-- **Obsługiwana walidacja:** Długość frontu (<= 200 znaków), długość tyłu (<= 500 znaków). Wyświetla błędy walidacji wewnątrz modala. Przycisk "Zapisz zmiany" nieaktywny, jeśli walidacja nie przechodzi.
-- **Typy:** `FlashcardProposalViewModel` (do inicjalizacji pól).
-- **Propsy:**
-    - `isOpen: boolean`
-    - `proposal: FlashcardProposalViewModel | null` (propozycja do edycji)
-    - `onSave: (id: string, updatedFront: string, updatedBack: string) => void`
-    - `onCancel: () => void`
-
 ### `SaveActions` (React Component)
 - **Opis:** Kontener na przyciski akcji zapisu: "Zapisz zaakceptowane" i opcjonalnie "Zapisz wszystkie".
 - **Główne elementy:** `Button` z Shadcn/ui.
 - **Obsługiwane interakcje:** Kliknięcie przycisków wywołuje `onSaveAccepted` lub `onSaveAll`. Przyciski są nieaktywne, jeśli nic nie jest gotowe do zapisania lub trwa proces zapisu.
 - **Obsługiwana walidacja:** Brak.
-- **Typy:** Brak.
+- **Typy:** `FlashcardsCreateCommand`
 - **Propsy:**
     - `canSaveAccepted: boolean`
     - `canSaveAll: boolean` // Jeśli zaimplementowano
@@ -112,7 +98,7 @@ GenerationPage (Astro/React Root)
 - **Opis:** Odpowiada za wyświetlanie błędów API (generowania, zapisu) oraz innych powiadomień, najczęściej za pomocą komponentu `Toast` z Shadcn/ui. Dla błędów generowania powinien oferować opcję ponowienia próby.
 - **Główne elementy:** Wykorzystuje `useToast` hook z Shadcn/ui do dynamicznego pokazywania toastów.
 - **Obsługiwane interakcje:** Kliknięcie przycisku "Spróbuj ponownie" na toście błędu generowania wywołuje odpowiednią funkcję.
-- **Obsługiwana walidacja:** Brak.
+- **Obsługiwana walidacja:** Przekazany komunikat nie powinien być pusty..
 - **Typy:** Przyjmuje obiekt błędu lub komunikat.
 - **Propsy:** Zintegrowany poprzez wywołania funkcji (np. `toast()`) z hooka/komponentu nadrzędnego.
 
@@ -143,7 +129,7 @@ Zalecane jest użycie customowego hooka React (np. `useGenerationView`) do zarz�
         - `proposals: FlashcardProposalViewModel[]`: Lista propozycji fiszek.
         - `generationId: number | null`: ID bieżącej generacji.
         - `error: Error | null`: Obiekt błędu API.
-        - `editingProposalId: string | null`: ID propozycji aktualnie edytowanej w modalu.
+        - `editingProposalId: string | null`: ID propozycji aktualnie edytowanej w modalu (opcjonalnie - modal edycji do zrobenia po MVP).
     - **Funkcje eksponowane:**
         - `handleGenerateSubmit(data: GenerateFlashcardsCommand)`: Wywołuje `POST /api/generations`, aktualizuje stan.
         - `handleAcceptProposal(id: string)`: Zmienia status propozycji na `'accepted'`.
@@ -175,9 +161,9 @@ Zalecane jest użycie customowego hooka React (np. `useGenerationView`) do zarz�
     - **Obsługa:** Wywoływane przez `handleSaveAccepted`/`handleSaveAll`. Należy obsłużyć potencjalne błędy dla każdej z osobna lub zbiorczo. **Uwaga:** Aktualna implementacja backendu obsługuje tylko pojedyncze tworzenie fiszek. Rozwiązaniem jest sekwencyjne/równoległe (z uwagą na rate limit) wywoływanie API lub (preferowane) modyfikacja backendu do obsługi tablicy fiszek.
 
 ## 8. Interakcje użytkownika
-- **Wprowadzenie tekstu i generowanie:** Użytkownik wprowadza tekst (walidacja długości), klika "Generuj fiszki". Widok pokazuje ładowanie, następnie listę propozycji lub błąd.
+- **Wprowadzenie tekstu i generowanie:** Użytkownik wkleja tekst (walidacja długości), klika "Generuj fiszki". Widok pokazuje ładowanie, następnie listę propozycji lub błąd.
 - **Przeglądanie i akcje:** Użytkownik przegląda karty. Kliknięcie "Akceptuj"/"Odrzuć"/"Edytuj" zmienia stan wizualny karty i wewnętrzny status propozycji.
-- **Edycja:** Kliknięcie "Edytuj" otwiera modal. Użytkownik edytuje tekst (walidacja długości), klika "Zapisz zmiany" (modal się zamyka, karta zaktualizowana) lub "Anuluj" (modal się zamyka, bez zmian).
+- **Edycja:** Kliknięcie "Edytuj" otwiera modal. Użytkownik edytuje tekst (walidacja długości), klika "Zapisz zmiany" (modal się zamyka, karta zaktualizowana) lub "Anuluj" (modal się zamyka, bez zmian). NIE IMPLEMENTOWAĆ NA ETAPIE MVP.
 - **Zapisywanie:** Użytkownik klika "Zapisz zaakceptowane" (lub "Zapisz wszystkie"). Widok pokazuje ładowanie zapisu. Po zakończeniu wyświetla sukces lub błąd (toast).
 
 ## 9. Warunki i walidacja
@@ -186,6 +172,7 @@ Zalecane jest użycie customowego hooka React (np. `useGenerationView`) do zarz�
 - **Długość edytowanego tyłu:** max 500 znaków (walidacja w `EditProposalModal`). Blokuje zapis w modalu.
 - **Aktywność przycisku "Generuj":** Nieaktywny, gdy `isLoading` jest `true` lub tekst źródłowy jest nieprawidłowy.
 - **Aktywność przycisków "Zapisz":** Nieaktywne, gdy `isSaving` jest `true` lub nie ma żadnych propozycji ze statusem `'accepted'` lub `'edited'` (dla "Zapisz zaakceptowane") lub `'pending'` (dla "Zapisz wszystkie").
+- **Walidacja odpowiedzi API**:** Komunikat o błędzie generacji fiszki przez AI.
 
 ## 10. Obsługa błędów
 - **Błąd generowania (`POST /api/generations`):**
