@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { FlashcardService } from "../../lib/services/flashcardService";
-import { flashcardsCreateCommandSchema } from "../../lib/schemas/flashcardSchemas";
+import { flashcardCreateSchema } from "../../lib/schemas/flashcardSchemas";
 import { withRateLimit } from "../../middleware/rateLimit";
 import { DatabaseError, NoDataError } from "../../lib/services/errors";
 import { LoggerService } from "../../lib/services/loggerService";
@@ -32,9 +32,9 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals }) => {
       );
     }
 
-    const result = flashcardsCreateCommandSchema.safeParse(body);
+    const result = flashcardCreateSchema.safeParse(body);
     if (!result.success) {
-      logger.warn("Validation failed for flashcards batch creation", {
+      logger.warn("Validation failed for flashcard creation", {
         errors: result.error.format(),
       });
       
@@ -50,19 +50,19 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals }) => {
       );
     }
 
-    // Create flashcards using service
+    // Create flashcard using service
     const flashcardService = new FlashcardService(locals.supabase);
-    const response = await flashcardService.createFlashcards(
-      result.data.flashcards,
+    const flashcard = await flashcardService.createFlashcard(
+      result.data,
       DEFAULT_USER_ID
     );
 
-    return new Response(JSON.stringify(response), {
+    return new Response(JSON.stringify(flashcard), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    logger.error("Error in POST /api/flashcards", { error });
+    logger.error("Error in POST /api/flashcard", { error });
 
     if (error instanceof DatabaseError) {
       return new Response(

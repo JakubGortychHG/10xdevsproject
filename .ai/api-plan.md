@@ -60,16 +60,17 @@
 - **Success Codes:** 200 OK
 - **Error Codes:** 401 Unauthorized, 404 Not Found
 
-#### Create Flashcard
+#### Create Single Flashcard
 - **Method:** POST
-- **Path:** `/api/flashcards`
+- **Path:** `/api/flashcard`
 - **Description:** Create a new flashcard manually or using AI
 - **Request Payload:**
 ```json
 {
   "front": "string",
   "back": "string",
-  "source": "string" // "manual" or "ai"
+  "source": "string", // "manual" or "ai"
+  "generation_id": "integer | null" // Required when source is "ai-full" or "ai-edited"
 }
 ```
 - **Response:**
@@ -82,6 +83,45 @@
   "created_at": "string",
   "updated_at": "string",
   "generation_id": "integer | null" // Present only when source is "ai-full" or "ai-edited"
+}
+```
+- **Success Codes:** 201 Created
+- **Error Codes:** 
+  - 400 Bad Request (invalid data)
+  - 401 Unauthorized
+
+#### Create Multiple Flashcards
+- **Method:** POST
+- **Path:** `/api/flashcards`
+- **Description:** Create multiple flashcards in a single request
+- **Request Payload:**
+```json
+{
+  "flashcards": [
+    {
+      "front": "string",
+      "back": "string",
+      "source": "string", // "manual", "ai-full", or "ai-edited"
+      "generation_id": "integer | null" // Required when source is "ai-full" or "ai-edited"
+    }
+  ]
+}
+```
+- **Response:**
+```json
+{
+  "flashcards": [
+    {
+      "id": "integer",
+      "front": "string",
+      "back": "string",
+      "source": "string", // "manual", "ai-full", or "ai-edited"
+      "created_at": "string",
+      "updated_at": "string",
+      "generation_id": "integer | null"
+    }
+  ],
+  "created_count": "integer"
 }
 ```
 - **Success Codes:** 201 Created
@@ -265,7 +305,9 @@
 - **Validation Rules:**
   - `front` field: Required, max 200 characters
   - `back` field: Required, max 500 characters
-  - `source` field: Must be one of: 'manual', 'ai'
+  - `source` field: Must be one of: 'manual', 'ai-full', 'ai-edited'
+  - Single create/update: Validate individual flashcard fields
+  - Batch create: Validate each flashcard in the array
   - Update: Only one flashcard can be modified at a time
   - Delete: Only one flashcard can be deleted at a time
 
