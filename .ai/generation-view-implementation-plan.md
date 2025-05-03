@@ -137,7 +137,7 @@ Zalecane jest użycie customowego hooka React (np. `useGenerationView`) do zarz�
         - `handleEditProposal(id: string)`: Ustawia `editingProposalId`.
         - `handleCancelEdit()`: Czyści `editingProposalId`.
         - `handleSaveChanges(id: string, updatedFront: string, updatedBack: string)`: Aktualizuje propozycję i jej status na `'edited'`.
-        - `handleSaveAccepted()`: Filtruje propozycje (`'accepted'`, `'edited'`), wywołuje `POST /api/flashcards` dla każdej, zarządza stanem `isSaving`.
+        - `handleSaveAccepted()`: Filtruje propozycje (`'accepted'`, `'edited'`), przygotowuje tablicę `FlashcardCreateDto[]` i wywołuje `POST /api/flashcards` z wszystkimi fiszkami w jednym żądaniu.
         - `handleSaveAll()`: Oznacza wszystkie `'pending'` jako `'accepted'`, następnie wywołuje `handleSaveAccepted()`.
         - `handleRetryGeneration()`: Czyści błąd i ponawia `handleGenerateSubmit`.
     - **Wartości pochodne eksponowane:**
@@ -153,12 +153,14 @@ Zalecane jest użycie customowego hooka React (np. `useGenerationView`) do zarz�
     - **Odpowiedź:** `GenerationCreateResponseDto` (`{ generation_id, flashcards_proposals, stats }`)
     - **Obsługa:** Wywoływane przez `handleGenerateSubmit`. Odpowiedź mapowana na `FlashcardProposalViewModel[]`.
 - **Zapisywanie fiszek:**
-    - **Endpoint:** `POST /api/flashcards` (wywoływany wielokrotnie)
-    - **Żądanie:** `FlashcardCreateDto` (`{ front, back, source, generation_id }`) dla każdej zaakceptowanej/edytowanej propozycji.
-        - `source` będzie `'ai-full'` dla zaakceptowanych, `'ai-edited'` dla edytowanych.
-        - `generation_id` pochodzi z odpowiedzi `POST /api/generations`.
-    - **Odpowiedź:** `FlashcardDto` (dla każdej zapisanej fiszki).
-    - **Obsługa:** Wywoływane przez `handleSaveAccepted`/`handleSaveAll`. Należy obsłużyć potencjalne błędy dla każdej z osobna lub zbiorczo. **Uwaga:** Aktualna implementacja backendu obsługuje tylko pojedyncze tworzenie fiszek. Rozwiązaniem jest sekwencyjne/równoległe (z uwagą na rate limit) wywoływanie API lub (preferowane) modyfikacja backendu do obsługi tablicy fiszek.
+    - **Endpoint:** `POST /api/flashcards`
+    - **Żądanie:** `FlashcardsCreateCommand` (`{ flashcards: FlashcardCreateDto[] }`) dla wszystkich zaakceptowanych/edytowanych propozycji w jednym żądaniu.
+        - Dla każdej fiszki w tablicy:
+            - `front` i `back` z aktualnego stanu propozycji
+            - `source` będzie `'ai-full'` dla zaakceptowanych, `'ai-edited'` dla edytowanych
+            - `generation_id` pochodzi z odpowiedzi `POST /api/generations`
+    - **Odpowiedź:** `{ flashcards: FlashcardDto[], created_count: number }`
+    - **Obsługa:** Wywoływane przez `handleSaveAccepted`/`handleSaveAll`. Wszystkie zaakceptowane/edytowane propozycje są wysyłane w jednym żądaniu.
 
 ## 8. Interakcje użytkownika
 - **Wprowadzenie tekstu i generowanie:** Użytkownik wkleja tekst (walidacja długości), klika "Generuj fiszki". Widok pokazuje ładowanie, następnie listę propozycji lub błąd.
@@ -181,9 +183,9 @@ Zalecane jest użycie customowego hooka React (np. `useGenerationView`) do zarz�
     - Zalogować szczegóły błędu do konsoli/systemu monitorowania.
 - **Błąd zapisu (`POST /api/flashcards`):**
     - Wyświetlić toast z komunikatem (np. "Wystąpił błąd podczas zapisywania fiszek.").
-    - Ponieważ zapis odbywa się per fiszka (obecnie), należy rozważyć strategię: zatrzymać przy pierwszym błędzie czy próbować zapisać wszystkie i zgłosić zbiorczy wynik? (Sugerowane: próbować zapisać wszystkie).
+    - W przypadku błędu zapisu, wszystkie fiszki pozostają w widoku z ich obecnym statusem.
     - Zalogować szczegóły błędu.
-    - Opcjonalnie: zachować niezapisane fiszki w widoku do ponownej próby zapisu.
+    - Użytkownik może ponowić próbę zapisu wszystkich fiszek.
 - **Błędy walidacji:** Obsługiwane lokalnie w formularzach (`SourceTextInputForm`, `EditProposalModal`) przez wyświetlanie komunikatów przy odpowiednich polach.
 
 ## 11. Kroki implementacji
@@ -195,7 +197,7 @@ Zalecane jest użycie customowego hooka React (np. `useGenerationView`) do zarz�
 6.  **Implementacja `FlashcardProposalList` i `FlashcardProposalCard`:** Stwórz komponenty do wyświetlania listy propozycji. `FlashcardProposalCard` powinien renderować front/back i przyciski akcji, połączone z odpowiednimi handlerami z hooka (`handleAcceptProposal`, `handleRejectProposal`, `handleEditProposal`). Wizualnie odzwierciedlaj status propozycji (`proposal.status`).
 7.  **Implementacja `EditProposalModal`:** Stwórz komponent modala używając `Dialog` z Shadcn/ui. Dodaj pola `textarea` dla frontu i tyłu, walidację długości i przyciski "Zapisz zmiany" / "Anuluj", połączone z handlerami `handleSaveChanges` i `handleCancelEdit`.
 8.  **Implementacja `SaveActions`:** Stwórz komponent z przyciskami "Zapisz zaakceptowane" / "Zapisz wszystkie", połączone z handlerami `handleSaveAccepted` / `handleSaveAll`. Deaktywuj przyciski w zależności od stanu (`isSaving`, `canSaveAccepted`, `canSaveAll`).
-9.  **Integracja API:** Zaimplementuj logikę wywołań API w `useGenerationView` (`fetch` lub biblioteka typu `axios`/`ky`) dla endpointów `/api/generations` i `/api/flashcards`. Pamiętaj o obsłudze wielokrotnych wywołań dla zapisu fiszek.
+9.  **Integracja API:** Zaimplementuj logikę wywołań API w `useGenerationView` (`fetch` lub biblioteka typu `axios`/`ky`) dla endpointów `/api/generations` i `/api/flashcards`. Wykorzystaj endpoint `/api/flashcards` do zapisu wszystkich fiszek w jednym żądaniu.
 10. **Obsługa błędów i powiadomień:** Zintegruj `useToast` z Shadcn/ui w `useGenerationView` lub `GenerationPage` do wyświetlania toastów sukcesu i błędów. Dodaj logikę retry dla błędów generowania.
 11. **Styling:** Użyj Tailwind CSS i klas Shadcn/ui do stylizacji komponentów zgodnie z projektem.
 12. **Testowanie:** Przetestuj wszystkie przepływy użytkownika, walidacje i obsługę błędów. 
