@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import type { FlashcardProposalViewModel } from "../../types"; 
 import type { GenerateFlashcardsCommand, FlashcardCreateDto, Source } from "../../types";
+import ErrorDisplay from "../../components/ErrorDisplay";
 
 /**
  * Custom hook for managing the state and logic of the generation view
@@ -120,15 +121,12 @@ export function useGenerationView() {
     setError(null);
     
     try {
-      const acceptedProposals = proposals.filter(p => 
-        p.status === "accepted"
-      );
+      const acceptedProposals = proposals.filter((p) => p.status === "accepted");
       
-      const flashcardsToCreate: FlashcardCreateDto[] = acceptedProposals.map(proposal => ({
+      const flashcardsToCreate: FlashcardCreateDto[] = acceptedProposals.map((proposal) => ({
         front: proposal.front,
         back: proposal.back,
-        // Używaj ai-edited, gdy fiszka jest oznaczona jako edytowana
-        source: proposal.isEdited ? "ai-edited" : "ai-full" as Source,
+        source: proposal.isEdited ? "ai-edited" : ("ai-full" as Source),
         generation_id: generationId,
       }));
       
@@ -144,29 +142,75 @@ export function useGenerationView() {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
       
-      // Optional: Handle success, e.g., redirect or clear state
-      // For now, we'll just log success
-      console.log("Flashcards saved successfully");
-    } catch (err: any) {
-      setError(err instanceof Error ? err : new Error(String(err)));
+      // Clear proposals after successful save
+      setProposals([]);
+      setGenerationId(null);
+      
+      // Show success toast
+      ErrorDisplay.showSuccess("Fiszki zostały pomyślnie zapisane");
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      ErrorDisplay.showSaveError(error.message);
     } finally {
       setIsSaving(false);
     }
   }, [generationId, proposals]);
 
-  // Handler for saving all proposals (mark all pending as accepted then save)
-  const handleSaveAll = useCallback(() => {
-    setProposals(prevProposals => 
-      prevProposals.map(proposal => 
-        proposal.status === "pending" 
-          ? { ...proposal, status: "accepted" } 
-          : proposal
-      )
+  // Handler for saving all non-rejected proposals
+  const handleSaveAll = useCallback(async () => {
+    // First mark all non-rejected proposals as accepted
+    const updatedProposals = proposals.map((proposal) => 
+      proposal.status !== "rejected"
+        ? { ...proposal, status: "accepted" }
+        : proposal,
     );
     
-    // Then call handleSaveAccepted
-    handleSaveAccepted();
-  }, [handleSaveAccepted]);
+    // Update state
+    setProposals(updatedProposals);
+    
+    // Use the updated proposals directly for saving
+    if (!generationId) return;
+    
+    setIsSaving(true);
+    setError(null);
+    
+    try {
+      const flashcardsToCreate: FlashcardCreateDto[] = updatedProposals
+        .filter((p) => p.status === "accepted")
+        .map((proposal) => ({
+          front: proposal.front,
+          back: proposal.back,
+          source: proposal.isEdited ? "ai-edited" : ("ai-full" as Source),
+          generation_id: generationId,
+        }));
+      
+      const response = await fetch("/api/flashcards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ flashcards: flashcardsToCreate }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      // Clear proposals after successful save
+      setProposals([]);
+      setGenerationId(null);
+      
+      // Show success toast
+      ErrorDisplay.showSuccess("Wszystkie fiszki zostały pomyślnie zapisane");
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      ErrorDisplay.showSaveError(error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [generationId, proposals]);
 
   // Handler for retrying generation
   const handleRetryGeneration = useCallback(() => {
