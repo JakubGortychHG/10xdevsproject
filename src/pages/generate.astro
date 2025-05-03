@@ -1,0 +1,11 @@
+---
+import Layout from "../layouts/Layout.astro";
+import GenerationPage from "../components/GenerationPage";
+---
+
+<Layout title="Generowanie Fiszek | 10xCards">
+  <main class="container mx-auto p-4 max-w-5xl">
+    <h1 class="text-3xl font-bold mb-6">Generowanie Fiszek</h1>
+    <GenerationPage client:load />
+  </main>
+</Layout> 

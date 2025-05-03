@@ -121,3 +121,18 @@ export type GenerationErrorLogDto = Pick<
   GenerationErrorLog,
   "id" | "error_code" | "error_message" | "model" | "source_text_hash" | "source_text_length" | "created_at" | "user_id"
 >;
+
+// ------------------------------------------------------------------------------------------------
+// 11. Flashcard Proposal ViewModel
+//     Represents a flashcard proposal in the UI with additional tracking fields
+// ------------------------------------------------------------------------------------------------
+export interface FlashcardProposalViewModel {
+  id: string;
+  front: string;
+  back: string;
+  originalFront: string;
+  originalBack: string;
+  status: "pending" | "accepted" | "rejected";
+  isEdited: boolean;
+  generation_id: number;
+}
