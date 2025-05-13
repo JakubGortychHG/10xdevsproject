@@ -31,22 +31,23 @@ Użytkownicy napotykają następujące problemy podczas korzystania z fiszek edu
 ### 3.1 Generowanie fiszek przez AI
 - Aplikacja umożliwia wprowadzenie tekstu edukacyjnego o długości 1000-10000 znaków
 - AI automatycznie generuje fiszki z treścią na przód i tył
-- Użytkownik ma możliwość akceptacji, odrzucenia lub edycji każdej wygenerowanej fiszki
-- System zapisuje tylko zaakceptowane fiszki
+- Zalogowany użytkownik ma możliwość akceptacji, odrzucenia lub edycji każdej wygenerowanej fiszki
+- System zapisuje tylko zaakceptowane fiszki dla zalogowanego uzytkownika.
 
 ### 3.2 Manualne tworzenie fiszek
 - Prosty formularz z polami "Przód" i "Tył"
-- Możliwość zapisania nowej fiszki w bazie danych użytkownika
+- Możliwość zapisania nowej fiszki w bazie danych zalogowanego użytkownika
 
 ### 3.3 Zarządzanie fiszkami
 - Przeglądanie zapisanych fiszek
 - Edycja istniejących fiszek
 - Usuwanie fiszek
+- Opcje dostępne tylko dla zalogowanego uytkownika
 
 ### 3.4 System kont użytkowników
-- Rejestracja użytkownika z e-mailem i hasłem
 - Logowanie do istniejącego konta
 - Przechowywanie fiszek przypisanych do konta użytkownika i aktulnego postępu w sesji
+- Logowanie wymaga podania adresu email i hasła.
 
 ### 3.5 System nauki
 - Implementacja gotowego algorytmu powtórek (open source)
@@ -83,7 +84,7 @@ Użytkownicy napotykają następujące problemy podczas korzystania z fiszek edu
 Jako nowy użytkownik, chcę utworzyć konto w aplikacji, aby móc przechowywać moje fiszki.
 
 Kryteria akceptacji:
-- Użytkownik może wprowadzić adres e-mail i hasło
+- Użytkownik może wprowadzić adres e-mail i hasło z potwierdzeniem
 - System informuje użytkownika o ewentualnych błędach walidacji
 - Po pomyślnej rejestracji, system automatycznie loguje użytkownika
 - Użytkownik otrzymuje potwierdzenie utworzenia konta
@@ -96,6 +97,8 @@ Kryteria akceptacji:
 - System weryfikuje poprawność danych logowania
 - System informuje użytkownika o błędnych danych logowania
 - Po poprawnym zalogowaniu, użytkownik jest przekierowany do głównego widoku aplikacji
+- Tylko zalogowany uzytkownik powinien miec dostep do akceptacji/edycji/odrzucenia fiszek (US-005)
+- Tylko zalogowany uzytkownik powinien miec dostep do zapisywania wygenerowanych fiszek, ich przeglądania i edytowania/usuwania (US-007,008, 009)
 
 ### US-003: Generowanie fiszek przez AI
 Jako użytkownik, chcę wygenerować fiszki przez AI na podstawie wprowadzonego tekstu, aby zaoszczędzić czas na ich manualnym tworzeniu.
@@ -106,6 +109,7 @@ Kryteria akceptacji:
 - Użytkownik może kliknąć przycisk "Generuj fiszki"
 - System wyświetla informację o trwającym procesie generowania
 - Po zakończeniu generowania, system prezentuje listę wygenerowanych fiszek
+- Generowanie fiszek powinno być dostępne równiez dla niezalogowanego uzytkownika.
 
 ### US-004: Przeglądanie wygenerowanych fiszek
 Jako użytkownik, chcę przeglądać fiszki wygenerowane przez AI, aby ocenić ich jakość.
@@ -118,7 +122,7 @@ Kryteria akceptacji:
 - Istnieje możliwość nawigacji między fiszkami
 
 ### US-005: Akceptacja/odrzucanie/edycja wygenerowanych fiszek
-Jako użytkownik, chcę mieć możliwość akceptacji, odrzucenia lub edycji wygenerowanych fiszek, aby zapisać tylko te, które uważam za wartościowe.
+Jako zalogowany użytkownik, chcę mieć możliwość akceptacji, odrzucenia lub edycji wygenerowanych fiszek, aby zapisać tylko te, które uważam za wartościowe.
 
 Kryteria akceptacji:
 - Dla każdej fiszki dostępne są opcje: akceptuj, odrzuć, edytuj
@@ -134,11 +138,11 @@ Kryteria akceptacji:
 - Dostępny jest prosty formularz z polami "Przód" i "Tył"
 - Użytkownik może wprowadzić treść na przód i tył fiszki
 - System waliduje, czy oba pola zostały wypełnione
-- Po kliknięciu "Zapisz", fiszka jest dodawana do bazy danych użytkownika
+- Po kliknięciu "Zapisz", fiszka jest dodawana do bazy danych zalogowanego użytkownika
 - Użytkownik otrzymuje potwierdzenie zapisania fiszki
 
 ### US-007: Przeglądanie zapisanych fiszek
-Jako użytkownik, chcę przeglądać moje zapisane fiszki, aby zobaczyć, jakie materiały mam do nauki.
+Jako zalogowany użytkownik, chcę przeglądać moje zapisane fiszki, aby zobaczyć, jakie materiały mam do nauki.
 
 Kryteria akceptacji:
 - System wyświetla listę wszystkich zapisanych fiszek użytkownika
@@ -147,7 +151,7 @@ Kryteria akceptacji:
 - Interfejs umożliwia wygodne przeglądanie wielu fiszek
 
 ### US-008: Edycja istniejących fiszek
-Jako użytkownik, chcę edytować moje istniejące fiszki, aby poprawić ich treść lub zaktualizować informacje.
+Jako zalogowany użytkownik, chcę edytować moje istniejące fiszki, aby poprawić ich treść lub zaktualizować informacje.
 
 Kryteria akceptacji:
 - Użytkownik może wybrać fiszkę do edycji
@@ -157,7 +161,7 @@ Kryteria akceptacji:
 - Użytkownik otrzymuje potwierdzenie zapisania zmian
 
 ### US-009: Usuwanie fiszek
-Jako użytkownik, chcę usuwać fiszki, których już nie potrzebuję.
+Jako zalogowany użytkownik, chcę usuwać fiszki, których już nie potrzebuję.
 
 Kryteria akceptacji:
 - Użytkownik może wybrać fiszkę do usunięcia
