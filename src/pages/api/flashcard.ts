@@ -4,16 +4,29 @@ import { flashcardCreateSchema } from "../../lib/schemas/flashcardSchemas";
 import { withRateLimit } from "../../middleware/rateLimit";
 import { DatabaseError, NoDataError } from "../../lib/services/errors";
 import { LoggerService } from "../../lib/services/loggerService";
+import { AuthService } from "../../lib/services/authService";
 
 export const prerender = false;
 
-// Default user ID for development
-const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
-
 const logger = LoggerService.getInstance();
 
-export const POST: APIRoute = withRateLimit(async ({ request, locals }) => {
+export const POST: APIRoute = withRateLimit(async ({ request, locals, cookies }) => {
   try {
+    // Get authenticated user
+    const authService = AuthService.getInstance();
+    authService.initializeClient({ cookies, headers: request.headers });
+    
+    const user = await authService.getUser();
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Parse and validate request body
     let body;
     try {
@@ -54,7 +67,7 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals }) => {
     const flashcardService = new FlashcardService(locals.supabase);
     const flashcard = await flashcardService.createFlashcard(
       result.data,
-      DEFAULT_USER_ID
+      user.id
     );
 
     return new Response(JSON.stringify(flashcard), {

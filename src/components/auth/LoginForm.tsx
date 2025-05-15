@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { z } from "zod";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Alert, AlertDescription } from "../ui/alert";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -35,7 +35,28 @@ export default function LoginForm() {
     }
 
     setIsLoading(true);
-    // Form submission will be handled by auth service
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Błąd logowania");
+      }
+
+      // Successful login - redirect to /generate
+      window.location.href = "/generate";
+    } catch (error) {
+      setGeneralError(error instanceof Error ? error.message : "Błąd logowania");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

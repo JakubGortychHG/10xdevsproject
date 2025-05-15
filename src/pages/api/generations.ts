@@ -3,18 +3,31 @@ import { generateFlashcardsSchema } from "../../lib/schemas/generationSchemas";
 import { withRateLimit } from "../../middleware/rateLimit";
 import { GenerationService } from "../../lib/services/generationService";
 import { LoggerService } from "../../lib/services/loggerService";
+import { AuthService } from "../../lib/services/authService";
 import crypto from "crypto";
 
 export const prerender = false;
 
-// Default user ID for development
-const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
-
 const logger = LoggerService.getInstance();
 
 // POST /api/generations - Generate flashcards from text
-export const POST: APIRoute = withRateLimit(async ({ request, locals }) => {
+export const POST: APIRoute = withRateLimit(async ({ request, locals, cookies }) => {
   try {
+    // Get authenticated user
+    const authService = AuthService.getInstance();
+    authService.initializeClient({ cookies, headers: request.headers });
+    
+    const user = await authService.getUser();
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Parse request body
     let body;
     try {
@@ -62,13 +75,14 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals }) => {
     logger.info("Starting flashcard generation", {
       textLength: source_text.length,
       textHash,
+      userId: user.id,
     });
 
     // Generate flashcards using the generation service
     const generationService = GenerationService.getInstance();
     const generationResult = await generationService.generateFlashcards(
       source_text,
-      DEFAULT_USER_ID,
+      user.id,
       textHash,
       locals.supabase,
     );
@@ -77,6 +91,7 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals }) => {
       generationId: generationResult.generation_id,
       flashcardsCount: generationResult.stats.generated_count,
       duration: generationResult.stats.generation_duration,
+      userId: user.id,
     });
 
     return new Response(

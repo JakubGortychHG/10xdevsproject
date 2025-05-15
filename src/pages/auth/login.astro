@@ -1,6 +1,17 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import LoginForm from "@/components/auth/LoginForm";
+import { AuthService } from "@/lib/services/authService";
+
+// Initialize auth service
+const authService = AuthService.getInstance();
+authService.initializeClient({ cookies: Astro.cookies, headers: Astro.request.headers });
+
+// Check if user is already logged in
+const user = await authService.getUser();
+if (user) {
+  return Astro.redirect("/generate");
+}
 ---
 
 <Layout title="Logowanie - 10xCards">

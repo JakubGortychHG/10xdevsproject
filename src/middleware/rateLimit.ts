@@ -1,12 +1,10 @@
 import type { APIContext, APIRoute } from "astro";
 import { RateLimiterMemory } from "rate-limiter-flexible";
+import { AuthService } from "../lib/services/authService";
 
 // Configure rate limits
 const RATE_LIMIT_POINTS = 100; // Number of requests allowed
 const RATE_LIMIT_DURATION = 300; // Duration in seconds (5 minutes)
-
-// Default user ID for development
-const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 // Create in-memory rate limiter
 const rateLimiter = new RateLimiterMemory({
@@ -26,7 +24,24 @@ export async function checkRateLimit(userId: string): Promise<void> {
 export function withRateLimit(handler: APIRoute): APIRoute {
   return async (context: APIContext) => {
     try {
-      await checkRateLimit(DEFAULT_USER_ID);
+      const authService = AuthService.getInstance();
+      authService.initializeClient({ 
+        cookies: context.cookies,
+        headers: context.request.headers 
+      });
+
+      const user = await authService.getUser();
+      if (!user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      await checkRateLimit(user.id);
       return await handler(context);
     } catch (error) {
       if (error instanceof Error && error.message.includes("Rate limit exceeded")) {
