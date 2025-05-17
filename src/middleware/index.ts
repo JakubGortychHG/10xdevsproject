@@ -54,7 +54,7 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
         email: user.email,
         id: user.id,
       };
-      return next();
+  return next();
     }
 
     // If API request, return 401

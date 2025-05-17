@@ -13,6 +13,8 @@ export interface OpenRouterServiceConfig {
     frequency_penalty?: number;
     presence_penalty?: number;
   };
+  timeout?: number;
+  maxRetries?: number;
 }
 
 export interface Message {
@@ -139,6 +141,7 @@ export class OpenRouterService {
   private costLimitDaily: number | null = null;
   private dailyUsage: number = 0;
   private usageResetDate: Date = new Date();
+  private maxRetries: number;
 
   constructor({
     apiKey,
@@ -151,6 +154,8 @@ export class OpenRouterService {
       frequency_penalty: 0,
       presence_penalty: 0,
     },
+    timeout = 60000, // Increased to 60 seconds
+    maxRetries = 3,
   }: OpenRouterServiceConfig) {
     if (!apiKey) {
       throw new OpenRouterAuthError("API key is required");
@@ -158,16 +163,17 @@ export class OpenRouterService {
 
     this.defaultModel = defaultModel;
     this.defaultParams = defaultParams as Required<OpenRouterServiceConfig["defaultParams"]>;
+    this.maxRetries = maxRetries;
     
     // Initialize axios client with base configuration
     this.client = axios.create({
       baseURL: baseUrl,
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://10xcards.com", // Replace with actual domain
-        "X-Title": "10xCards", // Replace with actual app name
+        "HTTP-Referer": "https://10xcards.com",
+        "X-Title": "10xCards",
       },
-      timeout: 30000, // 30 second timeout
+      timeout, // Use configured timeout
     });
 
     // Try to load cost limit from environment variable
@@ -277,7 +283,6 @@ export class OpenRouterService {
     try {
       const model = params.model || this.defaultModel;
       
-      // Check cost limit before making the request
       await this.checkCostLimit(params.messages, model);
 
       const requestBody = {
@@ -289,47 +294,120 @@ export class OpenRouterService {
         ...params.params,
       };
 
+      console.log("OpenRouter request body:", JSON.stringify(requestBody, null, 2));
+
       if (requestBody.stream) {
         const response = await this.handleStreamingChat(requestBody);
-        // Update usage after successful response
         if (response.usage) {
-          const cost = await this.estimateRequestCost(
-            params.messages,
-            model,
-          );
+          const cost = await this.estimateRequestCost(params.messages, model);
           this.updateDailyUsage(cost);
         }
         return response;
       }
 
       const response = await this.makeRequest("/chat/completions", requestBody);
-      const parsedResponse = this.parseResponse(response.data);
       
-      // Update usage after successful response
+      // Safely log response data without circular references
+      console.log("OpenRouter raw response:", {
+        status: response?.status,
+        statusText: response?.statusText,
+        headers: response?.headers,
+        data: response?.data
+      });
+
+      if (!response || !response.data) {
+        console.error("No data in response. Response info:", {
+          status: response?.status,
+          statusText: response?.statusText,
+          headers: response?.headers
+        });
+        throw new OpenRouterFormatError("No data in API response");
+      }
+
+      const parsedResponse = this.parseResponse(response.data);
+      console.log("OpenRouter parsed response:", parsedResponse);
+      
       if (parsedResponse.usage) {
-        const cost = await this.estimateRequestCost(
-          params.messages,
-          model,
-        );
+        const cost = await this.estimateRequestCost(params.messages, model);
         this.updateDailyUsage(cost);
       }
 
       return parsedResponse;
     } catch (error) {
+      console.error("OpenRouter chat error:", {
+        name: error instanceof Error ? error.name : 'Unknown error',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       this.handleError(error);
-      throw error; // This line will never be reached due to handleError throwing
+      throw error;
     }
   }
 
-  /**
-   * Makes a request to the OpenRouter API
-   */
-  private async makeRequest(endpoint: string, data: unknown) {
+  private async makeRequestWithRetry(
+    endpoint: string,
+    data: unknown,
+    retryCount = 0
+  ): Promise<AxiosResponse> {
     try {
       return await this.client.post(endpoint, data);
     } catch (error) {
+      if (
+        retryCount < this.maxRetries &&
+        (this.isNetworkError(error) || this.isRateLimitError(error))
+      ) {
+        // Exponential backoff
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.makeRequestWithRetry(endpoint, data, retryCount + 1);
+      }
+      throw error;
+    }
+  }
+
+  private isNetworkError(error: unknown): boolean {
+    if (!this.isAxiosError(error)) return false;
+    return !error.response || error.code === "ECONNABORTED";
+  }
+
+  private isRateLimitError(error: unknown): boolean {
+    if (!this.isAxiosError(error)) return false;
+    return error.response?.status === 429;
+  }
+
+  private async makeRequest(endpoint: string, data: unknown) {
+    try {
+      console.log(`Making request to ${endpoint}...`);
+      const response = await this.makeRequestWithRetry(endpoint, data);
+      
+      // Safely log response info
+      console.log(`Response info:`, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(Object.entries(response.headers)),
+      });
+      
+      if (!response.data) {
+        console.error("Empty response data from OpenRouter API");
+        throw new OpenRouterFormatError("Empty response from API");
+      }
+      
+      return response;
+    } catch (error) {
+      // Safely log error details
+      console.error(`Request to ${endpoint} failed:`, {
+        name: error instanceof Error ? error.name : 'Unknown error',
+        message: error instanceof Error ? error.message : String(error),
+        response: this.isAxiosError(error) ? {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers ? 
+            Object.fromEntries(Object.entries(error.response.headers)) : 
+            undefined
+        } : undefined
+      });
       this.handleError(error);
-      throw error; // This line will never be reached due to handleError throwing
     }
   }
 
@@ -559,38 +637,42 @@ export class OpenRouterService {
    */
   private handleError(error: unknown): never {
     if (this.isAxiosError(error)) {
-      const status = error.response?.status;
-      const data = error.response?.data as { error?: { message?: string } };
-      const message = data?.error?.message || error.message;
+      if (!error.response) {
+        throw new OpenRouterNetworkError(
+          "Network error occurred. Please check your internet connection and try again.",
+          0
+        );
+      }
+
+      const status = error.response.status;
+      const message = error.response.data?.error?.message || error.message;
 
       switch (status) {
         case 401:
-        case 403:
           throw new OpenRouterAuthError(message, status);
         case 429:
-          throw new OpenRouterRateLimitError(message, status);
-        case 404:
-          throw new OpenRouterModelError(message, status);
-        case 400:
-          throw new OpenRouterFormatError(message, status);
-        case 422:
-          throw new OpenRouterContentError(message, status);
-        default:
-          throw new OpenRouterNetworkError(
-            message || "Network error occurred",
-            status,
+          throw new OpenRouterRateLimitError(
+            "Rate limit exceeded. Please try again in a few moments.",
+            status
           );
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          throw new OpenRouterNetworkError(
+            "AI service is temporarily unavailable. Please try again in a few moments.",
+            status
+          );
+        default:
+          throw new OpenRouterError(message, "unknown_error", status);
       }
     }
 
-    if (error instanceof OpenRouterError) {
-      throw error;
+    if (error instanceof Error) {
+      throw new OpenRouterError(error.message, "unknown_error");
     }
 
-    throw new OpenRouterError(
-      error instanceof Error ? error.message : "Unknown error occurred",
-      "unknown_error",
-    );
+    throw new OpenRouterError("An unknown error occurred", "unknown_error");
   }
 
   /**

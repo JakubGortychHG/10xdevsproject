@@ -43,12 +43,12 @@ export default function SaveActions({
         {isSaving ? "Zapisywanie..." : "Zapisz zaakceptowane"}
       </Button>
       
-      <Button
-        onClick={onSaveAll}
-        disabled={!canSaveAll || isSaving}
-      >
+        <Button
+          onClick={onSaveAll}
+          disabled={!canSaveAll || isSaving}
+        >
         {isSaving ? "Zapisywanie..." : "Zapisz wszystkie"}
-      </Button>
+        </Button>
     </div>
   );
 } 
