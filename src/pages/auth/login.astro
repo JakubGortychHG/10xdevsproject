@@ -7,10 +7,23 @@ import { AuthService } from "@/lib/services/authService";
 const authService = AuthService.getInstance();
 authService.initializeClient({ cookies: Astro.cookies, headers: Astro.request.headers });
 
-// Check if user is already logged in
-const user = await authService.getUser();
-if (user) {
-  return Astro.redirect("/generate");
+// Get URL parameters
+const reason = Astro.url.searchParams.get("reason");
+let returnTo = Astro.url.searchParams.get("returnTo") || "/generate";
+
+// Clear any existing session if coming from logout
+if (reason === "logout") {
+  await authService.signOut();
+  // After logout, always redirect to home page
+  returnTo = "/generate";
+}
+
+// Check if user is already logged in (but skip if we just logged out)
+if (reason !== "logout") {
+  const user = await authService.getUser();
+  if (user) {
+    return Astro.redirect(returnTo);
+  }
 }
 ---
 
@@ -24,7 +37,7 @@ if (user) {
         </p>
       </div>
       
-      <LoginForm client:load />
+      <LoginForm client:load returnTo={returnTo} />
       
       <p class="text-center text-sm">
         Nie masz jeszcze konta?{" "}

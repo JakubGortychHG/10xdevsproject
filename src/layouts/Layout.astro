@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import UserInfo from "../components/auth/UserInfo";
 
 interface Props {
   title?: string;
@@ -9,7 +10,7 @@ const { title = "10x Astro Starter" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="pl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -17,16 +18,23 @@ const { title = "10x Astro Starter" } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
-  <body>
-    <slot />
+  <body class="min-h-screen flex flex-col">
+    <header class="border-b bg-white">
+      <div class="container mx-auto px-4 h-16 flex justify-between items-center">
+        <a href="/" class="text-xl font-bold hover:text-primary transition-colors">
+          10xCards
+        </a>
+        <UserInfo client:load />
+      </div>
+    </header>
+    <main class="flex-1 container mx-auto px-4 py-8">
+      <slot />
+    </main>
   </body>
 </html>
 
 <style>
-  html,
-  body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
+  html {
+    background-color: #fafafa;
   }
 </style>

@@ -5,13 +5,18 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Loader2 } from "lucide-react";
+import { createBrowserClient } from "@supabase/ssr";
 
 const loginSchema = z.object({
   email: z.string().email("Wprowadź poprawny adres email"),
   password: z.string().min(8, "Hasło musi mieć minimum 8 znaków"),
 });
 
-export default function LoginForm() {
+interface LoginFormProps {
+  returnTo?: string;
+}
+
+export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -37,21 +42,28 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      // Initialize Supabase client
+      const supabase = createBrowserClient(
+        import.meta.env.PUBLIC_SUPABASE_URL,
+        import.meta.env.PUBLIC_SUPABASE_KEY,
+      );
+
+      // Sign in with Supabase directly
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: result.data.email,
+        password: result.data.password,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Błąd logowania");
+      if (error) {
+        throw new Error(error.message);
       }
 
-      // Successful login - redirect to /generate
-      window.location.href = "/generate";
+      if (!data.session) {
+        throw new Error("Brak danych sesji");
+      }
+
+      // Successful login - redirect to returnTo or default
+      window.location.href = returnTo;
     } catch (error) {
       setGeneralError(error instanceof Error ? error.message : "Błąd logowania");
     } finally {

@@ -1,21 +1,26 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import type { SupabaseClient, User } from '@supabase/supabase-js';
-import type { AstroCookies } from 'astro';
-import { LoggerService } from './loggerService';
+import type { SupabaseClient, User, Session } from "@supabase/supabase-js";
+import type { AstroCookies } from "astro";
+import { LoggerService } from "./loggerService";
+import { createSupabaseServerInstance } from "@/db/supabase.client";
 
 export class AuthError extends Error {
-  constructor(message: string, public code?: string) {
+  constructor(
+    message: string,
+    public code?: string,
+  ) {
     super(message);
-    this.name = 'AuthError';
+    this.name = "AuthError";
   }
 }
 
 export class AuthService {
   private static instance: AuthService;
   private readonly logger = LoggerService.getInstance();
-  private supabase: SupabaseClient;
+  private supabase!: SupabaseClient;
 
-  private constructor() {}
+  private constructor() {
+    this.logger = LoggerService.getInstance();
+  }
 
   public static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -24,37 +29,21 @@ export class AuthService {
     return AuthService.instance;
   }
 
-  private cookieOptions: CookieOptions = {
-    path: '/',
-    secure: true,
-    httpOnly: true,
-    sameSite: 'lax',
-  };
-
   public initializeClient(context: {
     headers: Headers;
     cookies: AstroCookies;
   }): void {
-    this.supabase = createServerClient(
-      import.meta.env.SUPABASE_URL!,
-      import.meta.env.SUPABASE_PUBLIC_KEY!,
-      {
-        cookies: {
-          get(key: string) {
-            return context.cookies.get(key)?.value;
-          },
-          set(key: string, value: string, options) {
-            context.cookies.set(key, value, options);
-          },
-          remove(key: string, options) {
-            context.cookies.delete(key, options);
-          },
-        },
-      },
-    );
+    this.supabase = createSupabaseServerInstance(context);
   }
 
-  public async signIn(email: string, password: string): Promise<User> {
+  public getClient(): SupabaseClient {
+    if (!this.supabase) {
+      throw new Error("Supabase client not initialized. Call initializeClient first.");
+    }
+    return this.supabase;
+  }
+
+  public async signIn(email: string, password: string): Promise<{ user: User; session: Session }> {
     try {
       const { data, error } = await this.supabase.auth.signInWithPassword({
         email,
@@ -62,19 +51,22 @@ export class AuthService {
       });
 
       if (error) {
-        this.logger.error('Sign in failed', { error });
-        throw new AuthError('Invalid credentials');
+        this.logger.error("Sign in failed", { error });
+        throw new AuthError("Invalid credentials");
       }
 
-      if (!data.user) {
-        this.logger.error('No user data returned after sign in');
-        throw new AuthError('Authentication failed');
+      if (!data.user || !data.session) {
+        this.logger.error("No user data or session returned after sign in");
+        throw new AuthError("Authentication failed");
       }
 
-      return data.user;
+      return {
+        user: data.user,
+        session: data.session,
+      };
     } catch (error) {
-      this.logger.error('Unexpected error during sign in', { error });
-      throw new AuthError('Authentication failed');
+      this.logger.error("Unexpected error during sign in", { error });
+      throw new AuthError("Authentication failed");
     }
   }
 
@@ -83,12 +75,12 @@ export class AuthService {
       const { error } = await this.supabase.auth.signOut();
       
       if (error) {
-        this.logger.error('Sign out failed', { error });
-        throw new AuthError('Failed to sign out');
+        this.logger.error("Sign out failed", { error });
+        throw new AuthError("Failed to sign out");
       }
     } catch (error) {
-      this.logger.error('Unexpected error during sign out', { error });
-      throw new AuthError('Failed to sign out');
+      this.logger.error("Unexpected error during sign out", { error });
+      throw new AuthError("Failed to sign out");
     }
   }
 
@@ -97,13 +89,13 @@ export class AuthService {
       const { data: { user }, error } = await this.supabase.auth.getUser();
 
       if (error) {
-        this.logger.error('Failed to get user', { error });
+        this.logger.error("Failed to get user", { error });
         return null;
       }
 
       return user;
     } catch (error) {
-      this.logger.error('Unexpected error while getting user', { error });
+      this.logger.error("Unexpected error while getting user", { error });
       return null;
     }
   }

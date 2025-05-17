@@ -22,18 +22,28 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const authService = AuthService.getInstance();
     authService.initializeClient({ cookies, headers: request.headers });
 
-    const user = await authService.signIn(result.data.email, result.data.password);
+    const { user, session } = await authService.signIn(result.data.email, result.data.password);
 
-    if (!user) {
+    if (!user || !session) {
       return new Response(
         JSON.stringify({ error: "Invalid credentials" }),
         { status: 401 }
       );
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({ 
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+        session: {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }
+      }), 
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Login error:", error);
     return new Response(
