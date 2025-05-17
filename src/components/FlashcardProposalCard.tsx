@@ -1,5 +1,5 @@
 import { Card, CardContent, CardFooter } from "./ui/card";
-import { Button } from "./ui/button";
+import FlashcardActions from "./auth/FlashcardActions";
 import type { FlashcardProposalViewModel } from "../types";
 
 interface FlashcardProposalCardProps {
@@ -17,15 +17,10 @@ export default function FlashcardProposalCard({
 }: FlashcardProposalCardProps) {
   const { id, front, back, status, isEdited } = proposal;
   
-  // Determine card and button states based on status
-  const isAccepted = status === "accepted";
-  const isRejected = status === "rejected";
-  const isPending = status === "pending";
-  
   // Card style based on status
-  const cardClassName = isAccepted 
+  const cardClassName = status === "accepted" 
     ? "border-green-400" 
-    : isRejected 
+    : status === "rejected" 
       ? "border-red-400 opacity-60" 
       : "border-gray-200";
   
@@ -58,34 +53,13 @@ export default function FlashcardProposalCard({
       </CardContent>
       
       <CardFooter className="flex justify-end space-x-2 border-t border-gray-100 pt-3">
-        {!isRejected && (
-          <Button
-            variant={isAccepted ? "default" : "outline"}
-            onClick={() => onAccept(id)}
-            disabled={isAccepted}
-          >
-            {isAccepted ? "Zaakceptowano" : "Akceptuj"}
-          </Button>
-        )}
-        
-        {!isAccepted && (
-          <Button
-            variant={isRejected ? "destructive" : "outline"}
-            onClick={() => onReject(id)}
-            disabled={isRejected}
-          >
-            {isRejected ? "Odrzucono" : "Odrzuć"}
-          </Button>
-        )}
-        
-        {!isRejected && (
-          <Button
-            variant="outline"
-            onClick={() => onEdit(id)}
-          >
-            Edytuj
-          </Button>
-        )}
+        <FlashcardActions
+          id={id}
+          status={status}
+          onAccept={onAccept}
+          onReject={onReject}
+          onEdit={onEdit}
+        />
       </CardFooter>
     </Card>
   );

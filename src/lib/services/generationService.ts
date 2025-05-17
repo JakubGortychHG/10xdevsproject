@@ -35,21 +35,11 @@ export class GenerationService {
     return GenerationService.instance;
   }
 
-  async generateFlashcards(
-    sourceText: string,
-    userId: string,
-    textHash: string,
-    supabase: SupabaseClient<Database>,
-  ): Promise<GenerationCreateResponseDto> {
-    const startTime = Date.now();
-
-    try {
-      console.log("Starting flashcard generation...");
-
-      // System message defining the task and format
-      const systemMessage: Message = {
-        role: "system",
-        content: `You are a flashcard generation assistant. Create flashcards from the provided text.
+  // Helper method to get system message for flashcard generation
+  private getSystemMessage(): Message {
+    return {
+      role: "system",
+      content: `You are a flashcard generation assistant. Create flashcards from the provided text.
 Each flashcard should have a front (question/prompt) and back (answer/explanation).
 Format your response as a JSON array of flashcard objects with the following structure:
 {
@@ -73,7 +63,89 @@ Guidelines:
 - Assign appropriate confidence scores based on clarity and importance
 - Mark text positions accurately for traceability
 - Categorize each flashcard with the appropriate type`,
-      };
+    };
+  }
+
+  // Helper method to get response format schema
+  private getResponseFormat() {
+    return {
+      type: "json_schema" as const,
+      json_schema: {
+        name: "flashcards_response",
+        strict: true,
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            flashcards_proposals: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  front: { type: "string" },
+                  back: { type: "string" },
+                  confidence: { type: "number" },
+                  metadata: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                      source_text_start: { type: "number" },
+                      source_text_end: { type: "number" },
+                      type: { 
+                        type: "string",
+                        enum: ["definition", "concept", "fact", "process", "relationship"]
+                      }
+                    },
+                    required: ["source_text_start", "source_text_end", "type"]
+                  }
+                },
+                required: ["front", "back", "confidence", "metadata"]
+              }
+            }
+          },
+          required: ["flashcards_proposals"]
+        }
+      }
+    };
+  }
+
+  // Method for generating flashcards without database operations (for anonymous users)
+  async generateAnonymousFlashcards(sourceText: string) {
+    console.log("Starting anonymous flashcard generation...");
+
+    // User message with the source text
+    const userMessage: Message = {
+      role: "user",
+      content: sourceText,
+    };
+
+    // Generate flashcards using OpenRouter
+    const response = await this.openRouter.chat({
+      messages: [this.getSystemMessage(), userMessage],
+      responseFormat: this.getResponseFormat(),
+    });
+
+    const aiResponse = JSON.parse(response.choices[0].message.content as string);
+
+    console.log("AI Response received for anonymous user:", {
+      generated_count: aiResponse.flashcards_proposals.length,
+    });
+
+    return aiResponse;
+  }
+
+  // Method for generating and saving flashcards (for authenticated users)
+  async generateFlashcards(
+    sourceText: string,
+    userId: string,
+    textHash: string,
+    supabase: SupabaseClient<Database>,
+  ): Promise<GenerationCreateResponseDto> {
+    const startTime = Date.now();
+
+    try {
+      console.log("Starting flashcard generation...");
 
       // User message with the source text
       const userMessage: Message = {
@@ -83,47 +155,8 @@ Guidelines:
 
       // Generate flashcards using OpenRouter
       const response = await this.openRouter.chat({
-        messages: [systemMessage, userMessage],
-        responseFormat: {
-          type: "json_schema",
-          json_schema: {
-            name: "flashcards_response",
-            strict: true,
-            schema: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                flashcards_proposals: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    additionalProperties: false,
-                    properties: {
-                      front: { type: "string" },
-                      back: { type: "string" },
-                      confidence: { type: "number" },
-                      metadata: {
-                        type: "object",
-                        additionalProperties: false,
-                        properties: {
-                          source_text_start: { type: "number" },
-                          source_text_end: { type: "number" },
-                          type: { 
-                            type: "string",
-                            enum: ["definition", "concept", "fact", "process", "relationship"]
-                          }
-                        },
-                        required: ["source_text_start", "source_text_end", "type"]
-                      }
-                    },
-                    required: ["front", "back", "confidence", "metadata"]
-                  }
-                }
-              },
-              required: ["flashcards_proposals"]
-            }
-          }
-        }
+        messages: [this.getSystemMessage(), userMessage],
+        responseFormat: this.getResponseFormat(),
       });
 
       const generationDuration = Date.now() - startTime;
@@ -201,11 +234,8 @@ Guidelines:
         },
       };
     } catch (error) {
-      console.error("Unexpected error:", error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("An unexpected error occurred");
+      console.error("Error in generateFlashcards:", error);
+      throw error;
     }
   }
 } 

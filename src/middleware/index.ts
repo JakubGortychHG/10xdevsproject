@@ -5,12 +5,14 @@ import { AuthService } from "../lib/services/authService";
 // Public paths that don't require authentication
 const PUBLIC_PATHS = [
   "/",
+  "/generate",
   "/auth/login",
   "/auth/register",
   "/auth/reset-password",
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/reset-password",
+  "/api/generations",
 ];
 
 // Helper function to check if path is public

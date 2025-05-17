@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { generateFlashcardsSchema } from "../../lib/schemas/generationSchemas";
-import { withRateLimit } from "../../middleware/rateLimit";
 import { GenerationService } from "../../lib/services/generationService";
 import { LoggerService } from "../../lib/services/loggerService";
 import { AuthService } from "../../lib/services/authService";
@@ -11,22 +10,12 @@ export const prerender = false;
 const logger = LoggerService.getInstance();
 
 // POST /api/generations - Generate flashcards from text
-export const POST: APIRoute = withRateLimit(async ({ request, locals, cookies }) => {
+export const POST: APIRoute = async ({ request, locals, cookies }) => {
   try {
-    // Get authenticated user
+    // Get authenticated user if available
     const authService = AuthService.getInstance();
     authService.initializeClient({ cookies, headers: request.headers });
-    
     const user = await authService.getUser();
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
 
     // Parse request body
     let body;
@@ -75,11 +64,37 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals, cookies })
     logger.info("Starting flashcard generation", {
       textLength: source_text.length,
       textHash,
-      userId: user.id,
+      isAnonymous: !user,
     });
 
     // Generate flashcards using the generation service
     const generationService = GenerationService.getInstance();
+    
+    if (!user) {
+      // For anonymous users, generate flashcards without saving to database
+      const aiResponse = await generationService.generateAnonymousFlashcards(source_text);
+      
+      logger.info("Anonymous flashcard generation completed", {
+        flashcardsCount: aiResponse.flashcards_proposals.length,
+        isAnonymous: true,
+      });
+
+      return new Response(
+        JSON.stringify({
+          flashcards_proposals: aiResponse.flashcards_proposals,
+          stats: {
+            generated_count: aiResponse.flashcards_proposals.length,
+            source_text_length: source_text.length,
+          },
+        }),
+        {
+          status: 201,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // For authenticated users, generate and save to database
     const generationResult = await generationService.generateFlashcards(
       source_text,
       user.id,
@@ -87,7 +102,7 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals, cookies })
       locals.supabase,
     );
 
-    logger.info("Flashcard generation completed", {
+    logger.info("Authenticated flashcard generation completed", {
       generationId: generationResult.generation_id,
       flashcardsCount: generationResult.stats.generated_count,
       duration: generationResult.stats.generation_duration,
@@ -139,4 +154,4 @@ export const POST: APIRoute = withRateLimit(async ({ request, locals, cookies })
       },
     );
   }
-}); 
+}; 
