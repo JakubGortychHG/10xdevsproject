@@ -51,7 +51,7 @@ export default function SourceTextInputForm({
   const isValidLength = charCount >= 1000 && charCount <= 10000;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" data-testid="source-form">
       <div className="space-y-2">
         <div className="flex justify-between">
           <label htmlFor="source-text" className="text-sm font-medium">
