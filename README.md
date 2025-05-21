@@ -46,6 +46,17 @@ The MVP focuses on basic functionality, offering a minimalist interface and sati
   - Access to a wide range of models (OpenAI, Anthropic, Google, and many others)
   - Financial limits can be set on API keys
 
+### Testing
+- **Unit Testing:**
+  - **Vitest** - Fast testing framework with native Vite/Astro compatibility
+  - **React Testing Library** - Component testing for React UI elements
+  - **Supertest** - HTTP assertions for testing API endpoints
+  - **MSW (Mock Service Worker)** - API mocking for isolated testing
+
+- **End-to-End (E2E) Testing:**
+  - **Playwright** - Modern browser automation framework
+  - **Headless Browsers** - Chrome/Firefox for CI/CD test environments
+
 ### CI/CD and Hosting
 - **GitHub Actions** - For creating CI/CD pipelines
 - **DigitalOcean** - For hosting the application via Docker image
