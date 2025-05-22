@@ -72,6 +72,14 @@ describe("SourceTextInputForm", () => {
     // Try to submit the form
     const submitButton = screen.getByRole("button", { name: /generuj fiszki/i });
     expect(submitButton).toBeDisabled();
+
+    // Manually trigger form submission to check error message
+    const form = screen.getByTestId("source-form");
+    fireEvent.submit(form);
+    
+    // Verify error message is displayed
+    expect(screen.getByText(/tekst źródłowy musi zawierać co najmniej 1000 znaków/i)).toBeInTheDocument();
+    expect(mockSubmit).not.toHaveBeenCalled();
   });
 
   it("shows validation error when trying to submit invalid text directly", async () => {

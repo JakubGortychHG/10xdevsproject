@@ -18,8 +18,9 @@ vi.mock("../../components/ErrorDisplay", () => ({
 }));
 
 // Mocking crypto.randomUUID
+let uuidCounter = 0;
 vi.stubGlobal("crypto", {
-  randomUUID: () => "test-uuid-123",
+  randomUUID: () => `test-uuid-${++uuidCounter}`,
 });
 
 describe("useGenerationView", () => {
@@ -47,6 +48,7 @@ describe("useGenerationView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     server.resetHandlers();
+    uuidCounter = 0; // Reset counter before each test
   });
 
   // Test for initial state
@@ -91,7 +93,7 @@ describe("useGenerationView", () => {
     
     // Verify the structure of the proposals
     expect(result.current.proposals[0]).toEqual({
-      id: "test-uuid-123",
+      id: "test-uuid-1",
       front: "Test Front 1",
       back: "Test Back 1",
       originalFront: "Test Front 1",
@@ -186,16 +188,24 @@ describe("useGenerationView", () => {
       await result.current.handleGenerateSubmit(sampleGenerationCommand);
     });
     
-    // Initial check - no accepted proposals
-    expect(result.current.canSaveAccepted).toBe(false);
+    // Store proposal IDs for later reference
+    const firstProposalId = result.current.proposals[0].id;
+    const secondProposalId = result.current.proposals[1].id;
     
-    // Accept a proposal
+    // Initial check - all proposals should be pending
+    expect(result.current.canSaveAccepted).toBe(false);
+    expect(result.current.proposals.find(p => p.id === firstProposalId)?.status).toBe("pending");
+    expect(result.current.proposals.find(p => p.id === secondProposalId)?.status).toBe("pending");
+    
+    // Accept first proposal
     await act(async () => {
-      result.current.handleAcceptProposal(result.current.proposals[0].id);
+      result.current.handleAcceptProposal(firstProposalId);
     });
     
-    // Verify canSaveAccepted is true after acceptance
+    // Verify proposal status and save flag
     expect(result.current.canSaveAccepted).toBe(true);
+    expect(result.current.proposals.find(p => p.id === firstProposalId)?.status).toBe("accepted");
+    expect(result.current.proposals.find(p => p.id === secondProposalId)?.status).toBe("pending");
   });
 
   // Test for rejecting flashcard proposals
@@ -214,15 +224,24 @@ describe("useGenerationView", () => {
       await result.current.handleGenerateSubmit(sampleGenerationCommand);
     });
     
-    // Reject a proposal
+    // Store proposal IDs for later reference
+    const firstProposalId = result.current.proposals[0].id;
+    const secondProposalId = result.current.proposals[1].id;
+    
+    // Initial check - all proposals should be pending
+    expect(result.current.proposals.find(p => p.id === firstProposalId)?.status).toBe("pending");
+    expect(result.current.proposals.find(p => p.id === secondProposalId)?.status).toBe("pending");
+    expect(result.current.canSaveAll).toBe(true);
+    
+    // Reject first proposal
     await act(async () => {
-      result.current.handleRejectProposal(result.current.proposals[0].id);
+      result.current.handleRejectProposal(firstProposalId);
     });
     
-    // We cannot reliably check the status, as the implementation might
-    // be different than what we expect. Instead check the canSaveAll
-    // which should reflect whether there are pending proposals
-    expect(result.current.canSaveAll).toBe(false);
+    // Verify proposal status and save flag
+    expect(result.current.proposals.find(p => p.id === firstProposalId)?.status).toBe("rejected");
+    expect(result.current.proposals.find(p => p.id === secondProposalId)?.status).toBe("pending");
+    expect(result.current.canSaveAll).toBe(true); // Can still save all as there's one pending proposal
   });
 
   // Test for saving flashcards
@@ -328,39 +347,59 @@ describe("useGenerationView", () => {
 
   // Test for retry functionality
   it("should retry generation with the same source text", async () => {
-    // Setup MSW handler for the request
+    // Mock implementation with a counter to track API calls
+    let apiCallCount = 0;
+    
+    // Setup MSW handler for the request - first call succeeds, second call fails
     server.use(
       http.post("/api/generations", () => {
+        apiCallCount++;
+        
+        // First call succeeds to set the source text
+        if (apiCallCount === 1) {
+          return HttpResponse.json(sampleGenerationResponse);
+        }
+        
+        // Second call fails, simulating an error
+        if (apiCallCount === 2) {
+          return new HttpResponse(null, { 
+            status: 500,
+            statusText: "Server Error",
+          });
+        }
+        
+        // Third call (retry) succeeds again
         return HttpResponse.json(sampleGenerationResponse);
       }),
     );
 
     const { result } = renderHook(() => useGenerationView());
     
-    // First make a generation to set source text
+    // First generation - should succeed and set source text
     await act(async () => {
       await result.current.handleGenerateSubmit(sampleGenerationCommand);
     });
     
-    // Simulate an error
+    // Verify initial state is good
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeNull();
+    expect(result.current.proposals).toHaveLength(2);
+    expect(result.current.sourceText).toBe(sampleSourceText);
+    
+    // Second generation with different text - should fail
     await act(async () => {
-      // Directly modify result.current.error (hack but works for test)
-      Object.defineProperty(result.current, 'error', {
-        writable: true,
-        value: new Error("Test error")
-      });
-      
-      // Clear proposals to verify they get recreated
-      Object.defineProperty(result.current, 'proposals', {
-        writable: true,
-        value: []
-      });
+      await result.current.handleGenerateSubmit({ source_text: "Different text" });
     });
     
+    // Verify error state
+    expect(result.current.isLoading).toBe(false);
     expect(result.current.error).not.toBeNull();
-    expect(result.current.proposals).toHaveLength(0);
+    expect(result.current.error?.message).toContain("Error 500");
     
-    // Call retry
+    // Make sure source text is updated to the new text
+    expect(result.current.sourceText).toBe("Different text");
+    
+    // Now retry with the same text that's currently in the source
     await act(async () => {
       await result.current.handleRetryGeneration();
     });
@@ -369,5 +408,8 @@ describe("useGenerationView", () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(result.current.proposals).toHaveLength(2);
+    
+    // Verify we made 3 API calls total
+    expect(apiCallCount).toBe(3);
   });
 }); 
