@@ -101,8 +101,6 @@ describe("SourceTextInputForm", () => {
   });
 
   it("submits the form with valid text", async () => {
-    const user = userEvent.setup();
-
     render(<SourceTextInputForm onSubmit={mockSubmit} isLoading={false} />);
 
     // Set valid text
@@ -113,7 +111,7 @@ describe("SourceTextInputForm", () => {
     const submitButton = screen.getByRole("button", {
       name: /generuj fiszki/i,
     });
-    await user.click(submitButton);
+    await userEvent.setup().click(submitButton);
 
     // Check if onSubmit was called with correct data
     expect(mockSubmit).toHaveBeenCalledTimes(1);
@@ -121,7 +119,6 @@ describe("SourceTextInputForm", () => {
   });
 
   it("shows error when text is too long", async () => {
-    const user = userEvent.setup();
     const tooLongText = "A".repeat(10001); // 10001 characters
 
     render(<SourceTextInputForm onSubmit={mockSubmit} isLoading={false} />);
