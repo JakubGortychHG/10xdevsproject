@@ -22,6 +22,12 @@ export default defineConfig({
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    optimizeDeps: {
+      exclude: ["msw"],
+    },
+    ssr: {
+      noExternal: ["msw"],
+    },
   },
   adapter: node({
     mode: "standalone",
