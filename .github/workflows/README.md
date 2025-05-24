@@ -4,7 +4,7 @@ Ten katalog zawiera workflow GitHub Actions dla projektu 10xCards.
 
 ## Dostępne workflow
 
-### 1. CI/CD Pipeline (`ci-cd.yml`)
+### 1. Test & Build Production (`ci-cd.yml`)
 
 **Wyzwalacze:**
 - Push na branch `master`
@@ -17,7 +17,6 @@ Ten katalog zawiera workflow GitHub Actions dla projektu 10xCards.
 - Sprawdza kod z repozytorium
 - Konfiguruje Node.js (wersja z `.nvmrc`)
 - Instaluje zależności (`npm ci`)
-- Uruchamia linter (`npm run lint`)
 - Wykonuje testy jednostkowe (`npm run test`)
 - Generuje raport pokrycia testami (`npm run test:coverage`)
 
@@ -43,7 +42,7 @@ Ten katalog zawiera workflow GitHub Actions dla projektu 10xCards.
 
 ### Wymagane pliki
 - `.nvmrc` - określa wersję Node.js
-- `package.json` - zawiera skrypty: `lint`, `test`, `test:coverage`, `build`, `preview`, `test:e2e`
+- `package.json` - zawiera skrypty: `test`, `test:coverage`, `build`, `preview`, `test:e2e`
 
 ### Używane akcje GitHub
 - `actions/checkout@v4` - pobieranie kodu
