@@ -3,10 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useGenerationView } from "../../lib/hooks/useGenerationView";
 import { http, HttpResponse } from "msw";
 import { server } from "../../test/mocks/server";
-import type {
-  FlashcardProposalViewModel,
-  GenerationCreateResponseDto,
-} from "../../types";
+import type { GenerationCreateResponseDto } from "../../types";
 
 // Mocking the ErrorDisplay utility
 vi.mock("../../components/ErrorDisplay", () => ({
@@ -99,6 +96,7 @@ describe("useGenerationView", () => {
       originalFront: "Test Front 1",
       originalBack: "Test Back 1",
       status: "pending",
+      isEdited: false,
       generation_id: 123,
     });
   });

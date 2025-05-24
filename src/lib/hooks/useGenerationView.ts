@@ -3,6 +3,7 @@ import type { FlashcardProposalViewModel } from "../../types";
 import type {
   GenerateFlashcardsCommand,
   FlashcardCreateDto,
+  FlashcardProposalDto,
   Source,
 } from "../../types";
 import ErrorDisplay from "../../components/ErrorDisplay";
@@ -49,18 +50,19 @@ export function useGenerationView() {
 
         // Map API response to ViewModel
         const proposalsWithIds: FlashcardProposalViewModel[] =
-          flashcards_proposals.map((proposal: any) => ({
+          flashcards_proposals.map((proposal: FlashcardProposalDto) => ({
             id: crypto.randomUUID(),
             front: proposal.front,
             back: proposal.back,
             originalFront: proposal.front,
             originalBack: proposal.back,
-            status: "pending",
+            status: "pending" as const,
+            isEdited: false,
             generation_id,
           }));
 
         setProposals(proposalsWithIds);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setIsLoading(false);
@@ -173,7 +175,7 @@ export function useGenerationView() {
     // First mark all non-rejected proposals as accepted
     const updatedProposals = proposals.map((proposal) =>
       proposal.status !== "rejected"
-        ? { ...proposal, status: "accepted" }
+        ? { ...proposal, status: "accepted" as const }
         : proposal,
     );
 
@@ -234,9 +236,7 @@ export function useGenerationView() {
     ? proposals.find((p) => p.id === editingProposalId)
     : undefined;
 
-  const canSaveAccepted = proposals.some(
-    (p) => p.status === "accepted" || p.status === "edited",
-  );
+  const canSaveAccepted = proposals.some((p) => p.status === "accepted");
 
   const canSaveAll = proposals.some((p) => p.status === "pending");
 

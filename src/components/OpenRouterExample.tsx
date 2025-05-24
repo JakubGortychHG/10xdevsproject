@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useOpenRouter } from "../lib/hooks/useOpenRouter";
 import { useOpenRouterContext } from "../lib/providers/OpenRouterProvider";
-import type { Message } from "../lib/services/openrouter";
+import type { Message, ContentPart } from "../lib/services/openRouterService";
 
 export function OpenRouterExample() {
   const { service } = useOpenRouterContext();
@@ -17,10 +17,26 @@ export function OpenRouterExample() {
     setParams,
     setCostLimit,
   } = useOpenRouter(service, {
-    onError: (error) => {
-      console.error("Chat error:", error);
+    onError: () => {
+      // Error is handled by the hook's error state
     },
   });
+
+  // Helper function to render message content safely
+  const renderMessageContent = (content: string | ContentPart[]): string => {
+    if (typeof content === "string") {
+      return content;
+    }
+    // For ContentPart[], extract text content
+    return content
+      .map((part) => {
+        if (part.type === "text" && part.text) {
+          return part.text;
+        }
+        return "";
+      })
+      .join("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +54,8 @@ export function OpenRouterExample() {
       const response = await sendMessage([...messages, newMessage]);
 
       setMessages((prev) => [...prev, response.choices[0].message]);
-    } catch (error) {
+    } catch {
       // Error is already handled by the hook
-      console.log("Failed to send message");
     }
   };
 
@@ -129,7 +144,9 @@ export function OpenRouterExample() {
             <p className="text-sm font-medium mb-1">
               {message.role === "user" ? "You" : "Assistant"}
             </p>
-            <p className="whitespace-pre-wrap">{message.content}</p>
+            <p className="whitespace-pre-wrap">
+              {renderMessageContent(message.content)}
+            </p>
           </div>
         ))}
         {isLoading && (

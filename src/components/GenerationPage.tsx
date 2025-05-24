@@ -5,7 +5,6 @@ import FlashcardProposalList from "./FlashcardProposalList";
 import SaveActions from "./SaveActions";
 import EditProposalModal from "./EditProposalModal";
 import { Toaster } from "sonner";
-import ErrorDisplay from "./ErrorDisplay";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";

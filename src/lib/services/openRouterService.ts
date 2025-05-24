@@ -188,10 +188,7 @@ export class OpenRouterService {
   /**
    * Estimates the cost of a request based on token count and model pricing
    */
-  private async estimateRequestCost(
-    messages: Message[],
-    model: string,
-  ): Promise<number> {
+  private async estimateRequestCost(messages: Message[]): Promise<number> {
     try {
       // Use approximate costs instead of fetching model info
       const approximateCosts = {
@@ -251,15 +248,12 @@ export class OpenRouterService {
   /**
    * Checks if the request would exceed the daily cost limit
    */
-  private async checkCostLimit(
-    messages: Message[],
-    model: string,
-  ): Promise<void> {
+  private async checkCostLimit(messages: Message[]): Promise<void> {
     if (this.costLimitDaily === null) {
       return;
     }
 
-    const estimatedCost = await this.estimateRequestCost(messages, model);
+    const estimatedCost = await this.estimateRequestCost(messages);
 
     if (this.dailyUsage + estimatedCost > this.costLimitDaily) {
       throw new OpenRouterError(
@@ -290,7 +284,7 @@ export class OpenRouterService {
     try {
       const model = params.model || this.defaultModel;
 
-      await this.checkCostLimit(params.messages, model);
+      await this.checkCostLimit(params.messages);
 
       const requestBody = {
         model,
@@ -309,7 +303,7 @@ export class OpenRouterService {
       if (requestBody.stream) {
         const response = await this.handleStreamingChat(requestBody);
         if (response.usage) {
-          const cost = await this.estimateRequestCost(params.messages, model);
+          const cost = await this.estimateRequestCost(params.messages);
           this.updateDailyUsage(cost);
         }
         return response;
@@ -338,7 +332,7 @@ export class OpenRouterService {
       console.log("OpenRouter parsed response:", parsedResponse);
 
       if (parsedResponse.usage) {
-        const cost = await this.estimateRequestCost(params.messages, model);
+        const cost = await this.estimateRequestCost(params.messages);
         this.updateDailyUsage(cost);
       }
 
@@ -490,7 +484,7 @@ export class OpenRouterService {
                 result.usage = data.usage;
               }
             }
-          } catch (error) {
+          } catch {
             // Ignore JSON parse errors for incomplete chunks
           }
         });
@@ -532,11 +526,26 @@ export class OpenRouterService {
         throw new OpenRouterFormatError("Invalid response format from API");
       }
 
-      const rawResponse = response as any;
+      const rawResponse = response as Record<string, unknown>;
       console.log("Attempting to parse as raw response:", {
         hasChoices: Boolean(rawResponse.choices),
-        hasMessage: Boolean(rawResponse.choices?.[0]?.message),
-        hasContent: Boolean(rawResponse.choices?.[0]?.message?.content),
+        hasMessage: Boolean(
+          Array.isArray(rawResponse.choices) &&
+            rawResponse.choices[0] &&
+            typeof rawResponse.choices[0] === "object" &&
+            rawResponse.choices[0] !== null &&
+            "message" in rawResponse.choices[0],
+        ),
+        hasContent: Boolean(
+          Array.isArray(rawResponse.choices) &&
+            rawResponse.choices[0] &&
+            typeof rawResponse.choices[0] === "object" &&
+            rawResponse.choices[0] !== null &&
+            "message" in rawResponse.choices[0] &&
+            typeof rawResponse.choices[0].message === "object" &&
+            rawResponse.choices[0].message !== null &&
+            "content" in rawResponse.choices[0].message,
+        ),
       });
 
       // Check if this is a JSON schema response

@@ -16,8 +16,11 @@ export async function checkRateLimit(userId: string): Promise<void> {
   try {
     await rateLimiter.consume(userId);
   } catch (error) {
+    // Rate limiter error has msBeforeNext property
+    const rateLimiterError = error as { msBeforeNext?: number };
     const retryAfter =
-      Math.ceil((error as any).msBeforeNext / 1000) || RATE_LIMIT_DURATION;
+      Math.ceil((rateLimiterError.msBeforeNext || 0) / 1000) ||
+      RATE_LIMIT_DURATION;
     throw new Error(`Rate limit exceeded. Try again in ${retryAfter} seconds.`);
   }
 }

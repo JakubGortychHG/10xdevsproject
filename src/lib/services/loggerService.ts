@@ -10,6 +10,8 @@ interface LogEntry {
 export class LoggerService {
   private static instance: LoggerService;
 
+  // Private constructor for singleton pattern
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
   static getInstance(): LoggerService {

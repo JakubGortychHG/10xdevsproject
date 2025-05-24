@@ -5,7 +5,10 @@ import { AuthService } from "@/lib/services/authService";
 
 // Initialize auth service
 const authService = AuthService.getInstance();
-authService.initializeClient({ cookies: Astro.cookies, headers: Astro.request.headers });
+authService.initializeClient({
+  cookies: Astro.cookies,
+  headers: Astro.request.headers,
+});
 
 // Get URL parameters
 const reason = Astro.url.searchParams.get("reason");
@@ -36,9 +39,9 @@ if (reason !== "logout") {
           Wprowadź swoje dane aby kontynuować
         </p>
       </div>
-      
+
       <LoginForm client:load returnTo={returnTo} />
-      
+
       <p class="text-center text-sm">
         Nie masz jeszcze konta?{" "}
         <a href="/auth/register" class="text-primary hover:underline">
@@ -47,4 +50,4 @@ if (reason !== "logout") {
       </p>
     </div>
   </div>
-</Layout> 
+</Layout>

@@ -20,8 +20,13 @@ const { title = "10x Astro Starter" } = Astro.props;
   </head>
   <body class="min-h-screen flex flex-col">
     <header class="border-b bg-white">
-      <div class="container mx-auto px-4 h-16 flex justify-between items-center">
-        <a href="/" class="text-xl font-bold hover:text-primary transition-colors">
+      <div
+        class="container mx-auto px-4 h-16 flex justify-between items-center"
+      >
+        <a
+          href="/"
+          class="text-xl font-bold hover:text-primary transition-colors"
+        >
           10xCards
         </a>
         <UserInfo client:load />
