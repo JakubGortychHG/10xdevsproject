@@ -12,7 +12,9 @@ export class GenerationService {
     // Initialize OpenRouter with API key from environment
     const apiKey = import.meta.env.PRIVATE_OPENROUTER_API_KEY;
     if (!apiKey) {
-      throw new OpenRouterAuthError("OPENROUTER_API_KEY environment variable is not set");
+      throw new OpenRouterAuthError(
+        "OPENROUTER_API_KEY environment variable is not set",
+      );
     }
 
     this.openRouter = new OpenRouterService({
@@ -92,21 +94,27 @@ Guidelines:
                     properties: {
                       source_text_start: { type: "number" },
                       source_text_end: { type: "number" },
-                      type: { 
+                      type: {
                         type: "string",
-                        enum: ["definition", "concept", "fact", "process", "relationship"]
-                      }
+                        enum: [
+                          "definition",
+                          "concept",
+                          "fact",
+                          "process",
+                          "relationship",
+                        ],
+                      },
                     },
-                    required: ["source_text_start", "source_text_end", "type"]
-                  }
+                    required: ["source_text_start", "source_text_end", "type"],
+                  },
                 },
-                required: ["front", "back", "confidence", "metadata"]
-              }
-            }
+                required: ["front", "back", "confidence", "metadata"],
+              },
+            },
           },
-          required: ["flashcards_proposals"]
-        }
-      }
+          required: ["flashcards_proposals"],
+        },
+      },
     };
   }
 
@@ -126,7 +134,9 @@ Guidelines:
       responseFormat: this.getResponseFormat(),
     });
 
-    const aiResponse = JSON.parse(response.choices[0].message.content as string);
+    const aiResponse = JSON.parse(
+      response.choices[0].message.content as string,
+    );
 
     console.log("AI Response received for anonymous user:", {
       generated_count: aiResponse.flashcards_proposals.length,
@@ -160,7 +170,9 @@ Guidelines:
       });
 
       const generationDuration = Date.now() - startTime;
-      const aiResponse = JSON.parse(response.choices[0].message.content as string);
+      const aiResponse = JSON.parse(
+        response.choices[0].message.content as string,
+      );
 
       console.log("AI Response received:", {
         generated_count: aiResponse.flashcards_proposals.length,
@@ -219,7 +231,9 @@ Guidelines:
       }
 
       if (!generation) {
-        throw new Error("No generation record returned after successful insert");
+        throw new Error(
+          "No generation record returned after successful insert",
+        );
       }
 
       console.log("Generation record created successfully:", generation);
@@ -238,4 +252,4 @@ Guidelines:
       throw error;
     }
   }
-} 
+}

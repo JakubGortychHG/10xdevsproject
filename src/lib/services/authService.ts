@@ -38,12 +38,17 @@ export class AuthService {
 
   public getClient(): SupabaseClient {
     if (!this.supabase) {
-      throw new Error("Supabase client not initialized. Call initializeClient first.");
+      throw new Error(
+        "Supabase client not initialized. Call initializeClient first.",
+      );
     }
     return this.supabase;
   }
 
-  public async signIn(email: string, password: string): Promise<{ user: User; session: Session }> {
+  public async signIn(
+    email: string,
+    password: string,
+  ): Promise<{ user: User; session: Session }> {
     try {
       const { data, error } = await this.supabase.auth.signInWithPassword({
         email,
@@ -73,7 +78,7 @@ export class AuthService {
   public async signOut(): Promise<void> {
     try {
       const { error } = await this.supabase.auth.signOut();
-      
+
       if (error) {
         this.logger.error("Sign out failed", { error });
         throw new AuthError("Failed to sign out");
@@ -86,7 +91,10 @@ export class AuthService {
 
   public async getUser(): Promise<User | null> {
     try {
-      const { data: { user }, error } = await this.supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await this.supabase.auth.getUser();
 
       if (error) {
         this.logger.error("Failed to get user", { error });
@@ -99,4 +107,4 @@ export class AuthService {
       return null;
     }
   }
-} 
+}

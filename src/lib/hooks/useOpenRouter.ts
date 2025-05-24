@@ -1,5 +1,10 @@
 import { useState, useCallback } from "react";
-import type { OpenRouterService, Message, ChatParams, ChatResponse } from "../services/openrouter";
+import type {
+  OpenRouterService,
+  Message,
+  ChatParams,
+  ChatResponse,
+} from "../services/openrouter";
 
 export interface UseOpenRouterOptions {
   onError?: (error: Error) => void;
@@ -71,4 +76,4 @@ export function useOpenRouter(
     error,
     dailyUsage: service.getDailyUsage(),
   };
-} 
+}

@@ -19,7 +19,9 @@ interface LoginFormProps {
 export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
@@ -65,7 +67,9 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
       // Successful login - redirect to returnTo or default
       window.location.href = returnTo;
     } catch (error) {
-      setGeneralError(error instanceof Error ? error.message : "Błąd logowania");
+      setGeneralError(
+        error instanceof Error ? error.message : "Błąd logowania",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -90,9 +94,7 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
           disabled={isLoading}
           className={errors.email ? "border-red-500" : ""}
         />
-        {errors.email && (
-          <p className="text-sm text-red-500">{errors.email}</p>
-        )}
+        {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
       </div>
 
       <div className="space-y-2">
@@ -131,4 +133,4 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
       </Button>
     </form>
   );
-} 
+}

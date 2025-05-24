@@ -16,9 +16,7 @@ const formSchema = z.object({
   front: z
     .string()
     .max(200, "Przód fiszki może zawierać maksymalnie 200 znaków"),
-  back: z
-    .string()
-    .max(500, "Tył fiszki może zawierać maksymalnie 500 znaków"),
+  back: z.string().max(500, "Tył fiszki może zawierać maksymalnie 500 znaków"),
 });
 
 interface EditProposalModalProps {
@@ -83,7 +81,8 @@ export default function EditProposalModal({
   const backCharCount = back.length;
   const isFrontValid = frontCharCount <= 200;
   const isBackValid = backCharCount <= 500;
-  const canSave = isFrontValid && isBackValid && frontCharCount > 0 && backCharCount > 0;
+  const canSave =
+    isFrontValid && isBackValid && frontCharCount > 0 && backCharCount > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -91,7 +90,8 @@ export default function EditProposalModal({
         <DialogHeader>
           <DialogTitle>Edytuj fiszkę</DialogTitle>
           <DialogDescription>
-            Zmień zawartość fiszki poniżej. Kliknij &quot;Zapisz zmiany&quot; gdy skończysz.
+            Zmień zawartość fiszki poniżej. Kliknij &quot;Zapisz zmiany&quot;
+            gdy skończysz.
           </DialogDescription>
         </DialogHeader>
 
@@ -154,4 +154,4 @@ export default function EditProposalModal({
       </DialogContent>
     </Dialog>
   );
-} 
+}

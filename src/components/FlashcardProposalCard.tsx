@@ -16,14 +16,15 @@ export default function FlashcardProposalCard({
   onEdit,
 }: FlashcardProposalCardProps) {
   const { id, front, back, status, isEdited } = proposal;
-  
+
   // Card style based on status
-  const cardClassName = status === "accepted" 
-    ? "border-green-400" 
-    : status === "rejected" 
-      ? "border-red-400 opacity-60" 
-      : "border-gray-200";
-  
+  const cardClassName =
+    status === "accepted"
+      ? "border-green-400"
+      : status === "rejected"
+        ? "border-red-400 opacity-60"
+        : "border-gray-200";
+
   return (
     <Card className={`mb-4 ${cardClassName}`}>
       <CardContent className="pt-6">
@@ -37,9 +38,9 @@ export default function FlashcardProposalCard({
               </div>
             )}
           </div>
-          
+
           <div className="border-t border-gray-100 my-2" />
-          
+
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-1">Back</h3>
             <p className="text-base">{back}</p>
@@ -51,7 +52,7 @@ export default function FlashcardProposalCard({
           </div>
         </div>
       </CardContent>
-      
+
       <CardFooter className="flex justify-end space-x-2 border-t border-gray-100 pt-3">
         <FlashcardActions
           id={id}
@@ -63,4 +64,4 @@ export default function FlashcardProposalCard({
       </CardFooter>
     </Card>
   );
-} 
+}

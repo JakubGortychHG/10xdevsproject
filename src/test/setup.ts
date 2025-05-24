@@ -12,4 +12,4 @@ afterEach(() => {
   cleanup(); // Cleanup after each test
   server.resetHandlers(); // Reset handlers between tests
 });
-afterAll(() => server.close()); 
+afterAll(() => server.close());

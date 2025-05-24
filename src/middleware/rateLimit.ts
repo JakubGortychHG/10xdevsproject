@@ -16,7 +16,8 @@ export async function checkRateLimit(userId: string): Promise<void> {
   try {
     await rateLimiter.consume(userId);
   } catch (error) {
-    const retryAfter = Math.ceil((error as any).msBeforeNext / 1000) || RATE_LIMIT_DURATION;
+    const retryAfter =
+      Math.ceil((error as any).msBeforeNext / 1000) || RATE_LIMIT_DURATION;
     throw new Error(`Rate limit exceeded. Try again in ${retryAfter} seconds.`);
   }
 }
@@ -25,38 +26,35 @@ export function withRateLimit(handler: APIRoute): APIRoute {
   return async (context: APIContext) => {
     try {
       const authService = AuthService.getInstance();
-      authService.initializeClient({ 
+      authService.initializeClient({
         cookies: context.cookies,
-        headers: context.request.headers 
+        headers: context.request.headers,
       });
 
       const user = await authService.getUser();
       if (!user) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       await checkRateLimit(user.id);
       return await handler(context);
     } catch (error) {
-      if (error instanceof Error && error.message.includes("Rate limit exceeded")) {
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          {
-            status: 429,
-            headers: {
-              "Content-Type": "application/json",
-              "Retry-After": String(RATE_LIMIT_DURATION),
-            },
-          }
-        );
+      if (
+        error instanceof Error &&
+        error.message.includes("Rate limit exceeded")
+      ) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(RATE_LIMIT_DURATION),
+          },
+        });
       }
       throw error;
     }
   };
-} 
+}

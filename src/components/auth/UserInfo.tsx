@@ -14,30 +14,30 @@ export default function UserInfo() {
   }
 
   if (!user) {
-  return (
-    <div className="flex items-center gap-4">
-      <span className="text-sm text-muted-foreground">
-        Status: niezalogowany
-      </span>
-      <div className="h-4 w-px bg-muted-foreground/25" />
+    return (
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-muted-foreground">
+          Status: niezalogowany
+        </span>
+        <div className="h-4 w-px bg-muted-foreground/25" />
         <a href="/auth/login" className="text-sm text-primary hover:underline">
-        Zaloguj się
-      </a>
-      <span className="text-muted-foreground mx-2">|</span>
-      <a 
-        href="/auth/register"
-        className="text-sm text-primary hover:underline"
-      >
-        Zarejestruj się
-      </a>
-    </div>
-  );
+          Zaloguj się
+        </a>
+        <span className="text-muted-foreground mx-2">|</span>
+        <a
+          href="/auth/register"
+          className="text-sm text-primary hover:underline"
+        >
+          Zarejestruj się
+        </a>
+      </div>
+    );
   }
 
   return (
     <div className="flex items-center gap-4">
       <span className="text-sm text-muted-foreground">
-        Zalogowany jako: {" "}
+        Zalogowany jako:{" "}
         <span className="font-medium text-foreground">{user.email}</span>
       </span>
       <div className="h-4 w-px bg-muted-foreground/25" />
@@ -49,4 +49,4 @@ export default function UserInfo() {
       </button>
     </div>
   );
-} 
+}

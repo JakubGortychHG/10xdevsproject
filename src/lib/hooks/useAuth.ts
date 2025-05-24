@@ -21,7 +21,9 @@ export function useAuth() {
     // Get initial session
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
       } catch (error) {
         console.error("Error getting session:", error);
@@ -50,10 +52,10 @@ export function useAuth() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
+
       // Clear any local state
       setUser(null);
-      
+
       // Force a page reload to clear any cached state
       window.location.href = "/auth/login?reason=logout";
     } catch (error) {
@@ -68,4 +70,4 @@ export function useAuth() {
     isLoading,
     signOut,
   };
-} 
+}

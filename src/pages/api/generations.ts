@@ -54,7 +54,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     }
 
     const { source_text } = result.data;
-    
+
     // Calculate text hash for duplicate detection
     const textHash = crypto
       .createHash("sha256")
@@ -69,11 +69,12 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
 
     // Generate flashcards using the generation service
     const generationService = GenerationService.getInstance();
-    
+
     if (!user) {
       // For anonymous users, generate flashcards without saving to database
-      const aiResponse = await generationService.generateAnonymousFlashcards(source_text);
-      
+      const aiResponse =
+        await generationService.generateAnonymousFlashcards(source_text);
+
       logger.info("Anonymous flashcard generation completed", {
         flashcardsCount: aiResponse.flashcards_proposals.length,
         isAnonymous: true,
@@ -109,13 +110,10 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       userId: user.id,
     });
 
-    return new Response(
-      JSON.stringify(generationResult),
-      {
-        status: 201,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify(generationResult), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     logger.error("Error in POST /api/generations", { error });
 
@@ -146,12 +144,9 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       );
     }
 
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
-}; 
+};

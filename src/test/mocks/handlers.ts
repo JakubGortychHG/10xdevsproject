@@ -12,7 +12,7 @@ export const handlers = [
       },
     });
   }),
-  
+
   // Flashcard generation endpoint
   http.post("/api/generations", () => {
     const mockResponse: GenerationCreateResponseDto = {
@@ -28,10 +28,10 @@ export const handlers = [
         generation_duration: 2000,
       },
     };
-    
+
     return HttpResponse.json(mockResponse);
   }),
-  
+
   // Flashcard save endpoint
   http.post("/api/flashcards", () => {
     return HttpResponse.json({
@@ -39,4 +39,4 @@ export const handlers = [
       message: "Flashcards saved successfully",
     });
   }),
-]; 
+];

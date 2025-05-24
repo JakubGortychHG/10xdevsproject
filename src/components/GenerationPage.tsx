@@ -36,10 +36,14 @@ export default function GenerationPage() {
     if (!error) return null;
 
     const message = error.message.toLowerCase();
-    
-    if (message.includes("network error") || message.includes("temporarily unavailable")) {
+
+    if (
+      message.includes("network error") ||
+      message.includes("temporarily unavailable")
+    ) {
       return {
-        message: "Nie udało się połączyć z serwisem AI. Spróbuj ponownie za chwilę.",
+        message:
+          "Nie udało się połączyć z serwisem AI. Spróbuj ponownie za chwilę.",
         action: handleRetryGeneration,
         actionLabel: "Spróbuj ponownie",
       };
@@ -47,7 +51,8 @@ export default function GenerationPage() {
 
     if (message.includes("rate limit")) {
       return {
-        message: "Przekroczono limit zapytań. Poczekaj chwilę i spróbuj ponownie.",
+        message:
+          "Przekroczono limit zapytań. Poczekaj chwilę i spróbuj ponownie.",
         action: handleRetryGeneration,
         actionLabel: "Spróbuj ponownie",
       };
@@ -85,9 +90,9 @@ export default function GenerationPage() {
         isLoading={isLoading}
         initialText={sourceText}
       />
-      
+
       {isLoading && <LoadingIndicator />}
-      
+
       {error && errorInfo && (
         <Alert variant="destructive" className="animate-in fade-in">
           <AlertDescription className="flex items-center justify-between">
@@ -106,7 +111,7 @@ export default function GenerationPage() {
           </AlertDescription>
         </Alert>
       )}
-      
+
       {!isLoading && proposals.length > 0 && (
         <>
           <FlashcardProposalList
@@ -115,7 +120,7 @@ export default function GenerationPage() {
             onReject={handleRejectProposal}
             onEdit={handleEditProposal}
           />
-          
+
           <SaveActions
             canSaveAccepted={canSaveAccepted}
             canSaveAll={canSaveAll}
@@ -125,14 +130,14 @@ export default function GenerationPage() {
           />
         </>
       )}
-      
+
       <EditProposalModal
         proposal={proposalToEdit}
         onClose={handleCancelEdit}
         onSave={handleSaveChanges}
       />
-      
+
       <Toaster />
     </div>
   );
-} 
+}

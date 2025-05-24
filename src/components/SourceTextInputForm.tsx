@@ -32,17 +32,20 @@ export default function SourceTextInputForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate input
     const result = formSchema.safeParse({ source_text: text });
-    
+
     if (!result.success) {
       // Extract and display the first error message
       const formattedError = result.error.format();
-      setError(formattedError.source_text?._errors[0] || "Nieprawidłowy tekst źródłowy");
+      setError(
+        formattedError.source_text?._errors[0] ||
+          "Nieprawidłowy tekst źródłowy",
+      );
       return;
     }
-    
+
     // Submit validated data
     onSubmit({ source_text: text });
   };
@@ -51,17 +54,23 @@ export default function SourceTextInputForm({
   const isValidLength = charCount >= 1000 && charCount <= 10000;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" data-testid="source-form">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      data-testid="source-form"
+    >
       <div className="space-y-2">
         <div className="flex justify-between">
           <label htmlFor="source-text" className="text-sm font-medium">
             Tekst źródłowy
           </label>
-          <span className={`text-sm ${isValidLength ? "text-gray-500" : "text-red-500"}`}>
+          <span
+            className={`text-sm ${isValidLength ? "text-gray-500" : "text-red-500"}`}
+          >
             {charCount}/10000 znaków
           </span>
         </div>
-        
+
         <textarea
           id="source-text"
           className={`w-full min-h-[200px] p-3 border rounded-md ${
@@ -72,13 +81,11 @@ export default function SourceTextInputForm({
           onChange={handleChange}
           disabled={isLoading}
         />
-        
-        {error && (
-          <p className="text-sm text-red-500">{error}</p>
-        )}
+
+        {error && <p className="text-sm text-red-500">{error}</p>}
       </div>
-      
-      <Button 
+
+      <Button
         type="submit"
         disabled={isLoading || !isValidLength}
         className="w-full sm:w-auto"
@@ -87,4 +94,4 @@ export default function SourceTextInputForm({
       </Button>
     </form>
   );
-} 
+}

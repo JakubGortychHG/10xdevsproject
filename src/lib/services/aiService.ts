@@ -24,20 +24,20 @@ export class AIService {
 
   async generateFlashcards(sourceText: string): Promise<AIServiceResponse> {
     // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Mock response with sample flashcards
     const mockFlashcards: FlashcardProposal[] = [
       {
         front: "What is the capital of France?",
         back: "Paris is the capital of France",
-        source: "ai-full"
+        source: "ai-full",
       },
       {
         front: "Who wrote 'Romeo and Juliet'?",
         back: "William Shakespeare wrote 'Romeo and Juliet'",
-        source: "ai-full"
-      }
+        source: "ai-full",
+      },
     ];
 
     return {
@@ -45,8 +45,8 @@ export class AIService {
       stats: {
         generated_count: mockFlashcards.length,
         source_text_length: sourceText.length,
-        generation_duration: 1000 // milliseconds
-      }
+        generation_duration: 1000, // milliseconds
+      },
     };
   }
-} 
+}

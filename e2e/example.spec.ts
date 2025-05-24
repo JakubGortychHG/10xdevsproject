@@ -12,4 +12,4 @@ test.describe("Basic application tests", () => {
     // Sprawdzamy, czy body strony jest widoczne
     await expect(page.locator("body")).toBeVisible();
   });
-}); 
+});

@@ -48,7 +48,7 @@ export default function FlashcardActions({
           {isAccepted ? "Zaakceptowano" : "Akceptuj"}
         </Button>
       )}
-      
+
       {!isAccepted && (
         <Button
           variant={isRejected ? "destructive" : "outline"}
@@ -58,15 +58,12 @@ export default function FlashcardActions({
           {isRejected ? "Odrzucono" : "Odrzuć"}
         </Button>
       )}
-      
+
       {!isRejected && (
-        <Button
-          variant="outline"
-          onClick={() => onEdit(id)}
-        >
+        <Button variant="outline" onClick={() => onEdit(id)}>
           Edytuj
         </Button>
       )}
     </div>
   );
-} 
+}

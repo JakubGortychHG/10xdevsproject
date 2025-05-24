@@ -9,7 +9,7 @@ interface LogEntry {
 
 export class LoggerService {
   private static instance: LoggerService;
-  
+
   private constructor() {}
 
   static getInstance(): LoggerService {
@@ -19,7 +19,11 @@ export class LoggerService {
     return LoggerService.instance;
   }
 
-  private formatLog(level: LogLevel, message: string, context?: Record<string, unknown>): LogEntry {
+  private formatLog(
+    level: LogLevel,
+    message: string,
+    context?: Record<string, unknown>,
+  ): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
@@ -60,4 +64,4 @@ export class LoggerService {
   debug(message: string, context?: Record<string, unknown>): void {
     this.output(this.formatLog("debug", message, context));
   }
-} 
+}

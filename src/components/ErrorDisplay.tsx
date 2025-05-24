@@ -10,15 +10,15 @@ const ErrorDisplay = {
   showGenerationError: (errorMessage: string, onRetry?: () => void) => {
     toast.error(errorMessage, {
       description: "Wystąpił błąd podczas generowania fiszek.",
-      action: onRetry 
+      action: onRetry
         ? {
             label: "Spróbuj ponownie",
             onClick: onRetry,
-          } 
+          }
         : undefined,
     });
   },
-  
+
   /**
    * Shows a save error message
    */
@@ -27,7 +27,7 @@ const ErrorDisplay = {
       description: errorMessage || "Wystąpił błąd podczas zapisywania fiszek.",
     });
   },
-  
+
   /**
    * Shows a success message
    */
@@ -38,4 +38,4 @@ const ErrorDisplay = {
   },
 };
 
-export default ErrorDisplay; 
+export default ErrorDisplay;

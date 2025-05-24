@@ -139,7 +139,7 @@ export class OpenRouterService {
   private defaultModel: string;
   private defaultParams: Required<OpenRouterServiceConfig["defaultParams"]>;
   private costLimitDaily: number | null = null;
-  private dailyUsage: number = 0;
+  private dailyUsage = 0;
   private usageResetDate: Date = new Date();
   private maxRetries: number;
 
@@ -162,9 +162,11 @@ export class OpenRouterService {
     }
 
     this.defaultModel = defaultModel;
-    this.defaultParams = defaultParams as Required<OpenRouterServiceConfig["defaultParams"]>;
+    this.defaultParams = defaultParams as Required<
+      OpenRouterServiceConfig["defaultParams"]
+    >;
     this.maxRetries = maxRetries;
-    
+
     // Initialize axios client with base configuration
     this.client = axios.create({
       baseURL: baseUrl,
@@ -193,8 +195,8 @@ export class OpenRouterService {
     try {
       // Use approximate costs instead of fetching model info
       const approximateCosts = {
-        prompt: 0.00001,      // $0.00001 per token
-        completion: 0.00001,  // $0.00001 per token
+        prompt: 0.00001, // $0.00001 per token
+        completion: 0.00001, // $0.00001 per token
       };
 
       // Rough token count estimation (this is a simple approximation)
@@ -203,18 +205,21 @@ export class OpenRouterService {
           // Rough estimate: 4 characters per token
           return count + Math.ceil(msg.content.length / 4);
         }
-        return count + msg.content.reduce((partCount, part) => {
-          if (part.type === "text" && part.text) {
-            return partCount + Math.ceil(part.text.length / 4);
-          }
-          return partCount;
-        }, 0);
+        return (
+          count +
+          msg.content.reduce((partCount, part) => {
+            if (part.type === "text" && part.text) {
+              return partCount + Math.ceil(part.text.length / 4);
+            }
+            return partCount;
+          }, 0)
+        );
       }, 0);
 
       // Calculate cost
       const promptCost = tokenCount * approximateCosts.prompt;
       // Estimate completion tokens as 50% of input tokens
-      const completionCost = (tokenCount * 0.5) * approximateCosts.completion;
+      const completionCost = tokenCount * 0.5 * approximateCosts.completion;
 
       return promptCost + completionCost;
     } catch (error) {
@@ -229,11 +234,13 @@ export class OpenRouterService {
    */
   private updateDailyUsage(cost: number): void {
     const now = new Date();
-    
+
     // Reset usage if it's a new day
-    if (now.getDate() !== this.usageResetDate.getDate() ||
-        now.getMonth() !== this.usageResetDate.getMonth() ||
-        now.getFullYear() !== this.usageResetDate.getFullYear()) {
+    if (
+      now.getDate() !== this.usageResetDate.getDate() ||
+      now.getMonth() !== this.usageResetDate.getMonth() ||
+      now.getFullYear() !== this.usageResetDate.getFullYear()
+    ) {
       this.dailyUsage = 0;
       this.usageResetDate = now;
     }
@@ -253,7 +260,7 @@ export class OpenRouterService {
     }
 
     const estimatedCost = await this.estimateRequestCost(messages, model);
-    
+
     if (this.dailyUsage + estimatedCost > this.costLimitDaily) {
       throw new OpenRouterError(
         `Request would exceed daily cost limit of $${this.costLimitDaily}`,
@@ -282,7 +289,7 @@ export class OpenRouterService {
   public async chat(params: ChatParams): Promise<ChatResponse> {
     try {
       const model = params.model || this.defaultModel;
-      
+
       await this.checkCostLimit(params.messages, model);
 
       const requestBody = {
@@ -294,7 +301,10 @@ export class OpenRouterService {
         ...params.params,
       };
 
-      console.log("OpenRouter request body:", JSON.stringify(requestBody, null, 2));
+      console.log(
+        "OpenRouter request body:",
+        JSON.stringify(requestBody, null, 2),
+      );
 
       if (requestBody.stream) {
         const response = await this.handleStreamingChat(requestBody);
@@ -306,27 +316,27 @@ export class OpenRouterService {
       }
 
       const response = await this.makeRequest("/chat/completions", requestBody);
-      
+
       // Safely log response data without circular references
       console.log("OpenRouter raw response:", {
         status: response?.status,
         statusText: response?.statusText,
         headers: response?.headers,
-        data: response?.data
+        data: response?.data,
       });
 
       if (!response || !response.data) {
         console.error("No data in response. Response info:", {
           status: response?.status,
           statusText: response?.statusText,
-          headers: response?.headers
+          headers: response?.headers,
         });
         throw new OpenRouterFormatError("No data in API response");
       }
 
       const parsedResponse = this.parseResponse(response.data);
       console.log("OpenRouter parsed response:", parsedResponse);
-      
+
       if (parsedResponse.usage) {
         const cost = await this.estimateRequestCost(params.messages, model);
         this.updateDailyUsage(cost);
@@ -335,9 +345,9 @@ export class OpenRouterService {
       return parsedResponse;
     } catch (error) {
       console.error("OpenRouter chat error:", {
-        name: error instanceof Error ? error.name : 'Unknown error',
+        name: error instanceof Error ? error.name : "Unknown error",
         message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
       this.handleError(error);
       throw error;
@@ -347,7 +357,7 @@ export class OpenRouterService {
   private async makeRequestWithRetry(
     endpoint: string,
     data: unknown,
-    retryCount = 0
+    retryCount = 0,
   ): Promise<AxiosResponse> {
     try {
       return await this.client.post(endpoint, data);
@@ -358,7 +368,7 @@ export class OpenRouterService {
       ) {
         // Exponential backoff
         const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         return this.makeRequestWithRetry(endpoint, data, retryCount + 1);
       }
       throw error;
@@ -379,33 +389,35 @@ export class OpenRouterService {
     try {
       console.log(`Making request to ${endpoint}...`);
       const response = await this.makeRequestWithRetry(endpoint, data);
-      
+
       // Safely log response info
       console.log(`Response info:`, {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(Object.entries(response.headers)),
       });
-      
+
       if (!response.data) {
         console.error("Empty response data from OpenRouter API");
         throw new OpenRouterFormatError("Empty response from API");
       }
-      
+
       return response;
     } catch (error) {
       // Safely log error details
       console.error(`Request to ${endpoint} failed:`, {
-        name: error instanceof Error ? error.name : 'Unknown error',
+        name: error instanceof Error ? error.name : "Unknown error",
         message: error instanceof Error ? error.message : String(error),
-        response: this.isAxiosError(error) ? {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers ? 
-            Object.fromEntries(Object.entries(error.response.headers)) : 
-            undefined
-        } : undefined
+        response: this.isAxiosError(error)
+          ? {
+              status: error.response?.status,
+              statusText: error.response?.statusText,
+              data: error.response?.data,
+              headers: error.response?.headers
+                ? Object.fromEntries(Object.entries(error.response.headers))
+                : undefined,
+            }
+          : undefined,
       });
       this.handleError(error);
     }
@@ -432,7 +444,7 @@ export class OpenRouterService {
 
         response.data.on("data", (chunk: Buffer) => {
           chunks.push(chunk);
-          
+
           try {
             const lines = chunk
               .toString()
@@ -464,7 +476,7 @@ export class OpenRouterService {
                 };
 
                 choice.message.content += data.choices[0].delta.content;
-                
+
                 if (!result.choices[0]) {
                   result.choices.push(choice);
                 }
@@ -507,7 +519,7 @@ export class OpenRouterService {
   private parseResponse(response: unknown): ChatResponse {
     try {
       console.log("Raw API Response:", JSON.stringify(response, null, 2));
-      
+
       // Check if response is already in ChatResponse format
       if (this.isValidChatResponse(response)) {
         console.log("Response is valid ChatResponse format");
@@ -524,27 +536,31 @@ export class OpenRouterService {
       console.log("Attempting to parse as raw response:", {
         hasChoices: Boolean(rawResponse.choices),
         hasMessage: Boolean(rawResponse.choices?.[0]?.message),
-        hasContent: Boolean(rawResponse.choices?.[0]?.message?.content)
+        hasContent: Boolean(rawResponse.choices?.[0]?.message?.content),
       });
-      
+
       // Check if this is a JSON schema response
       if (rawResponse.choices?.[0]?.message?.content) {
-        console.log("Found content in response, converting to ChatResponse format");
+        console.log(
+          "Found content in response, converting to ChatResponse format",
+        );
         return {
           id: rawResponse.id || "unknown",
           model: rawResponse.model || "unknown",
-          choices: [{
-            message: {
-              role: "assistant",
-              content: rawResponse.choices[0].message.content
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: rawResponse.choices[0].message.content,
+              },
+              finish_reason: rawResponse.choices?.[0]?.finish_reason || "stop",
             },
-            finish_reason: rawResponse.choices?.[0]?.finish_reason || "stop"
-          }],
+          ],
           usage: rawResponse.usage || {
             prompt_tokens: 0,
             completion_tokens: 0,
-            total_tokens: 0
-          }
+            total_tokens: 0,
+          },
         };
       }
 
@@ -577,7 +593,7 @@ export class OpenRouterService {
           typeof choice.message.role === "string" &&
           (typeof choice.message.content === "string" ||
             Array.isArray(choice.message.content)) &&
-          typeof choice.finish_reason === "string"
+          typeof choice.finish_reason === "string",
       ) &&
       typeof chatResponse.usage === "object" &&
       chatResponse.usage !== null &&
@@ -593,7 +609,7 @@ export class OpenRouterService {
   public async getAvailableModels(): Promise<Model[]> {
     try {
       const response = await this.makeRequest("/models", {});
-      
+
       if (!Array.isArray(response.data)) {
         throw new OpenRouterFormatError("Invalid models response format");
       }
@@ -640,7 +656,7 @@ export class OpenRouterService {
       if (!error.response) {
         throw new OpenRouterNetworkError(
           "Network error occurred. Please check your internet connection and try again.",
-          0
+          0,
         );
       }
 
@@ -653,7 +669,7 @@ export class OpenRouterService {
         case 429:
           throw new OpenRouterRateLimitError(
             "Rate limit exceeded. Please try again in a few moments.",
-            status
+            status,
           );
         case 500:
         case 502:
@@ -661,7 +677,7 @@ export class OpenRouterService {
         case 504:
           throw new OpenRouterNetworkError(
             "AI service is temporarily unavailable. Please try again in a few moments.",
-            status
+            status,
           );
         default:
           throw new OpenRouterError(message, "unknown_error", status);
@@ -699,7 +715,9 @@ export class OpenRouterService {
   /**
    * Updates default parameters for future requests
    */
-  public setDefaultParams(params: Partial<OpenRouterServiceConfig["defaultParams"]>): void {
+  public setDefaultParams(
+    params: Partial<OpenRouterServiceConfig["defaultParams"]>,
+  ): void {
     this.defaultParams = {
       ...this.defaultParams,
       ...params,
@@ -709,7 +727,9 @@ export class OpenRouterService {
   /**
    * Gets the current default parameters
    */
-  public getDefaultParams(): Required<OpenRouterServiceConfig["defaultParams"]> {
+  public getDefaultParams(): Required<
+    OpenRouterServiceConfig["defaultParams"]
+  > {
     return { ...this.defaultParams };
   }
 
@@ -763,4 +783,4 @@ export class OpenRouterService {
     this.dailyUsage = 0;
     this.usageResetDate = new Date();
   }
-} 
+}

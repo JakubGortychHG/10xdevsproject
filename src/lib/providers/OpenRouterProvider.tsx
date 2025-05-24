@@ -1,5 +1,8 @@
 import React, { createContext, useContext } from "react";
-import type { OpenRouterService, OpenRouterServiceConfig } from "../services/openrouter";
+import type {
+  OpenRouterService,
+  OpenRouterServiceConfig,
+} from "../services/openrouter";
 
 interface OpenRouterContextValue {
   service: OpenRouterService;
@@ -32,17 +35,19 @@ export function OpenRouterProvider({
 
 export function useOpenRouterContext(): OpenRouterContextValue {
   const context = useContext(OpenRouterContext);
-  
+
   if (!context) {
     throw new Error(
       "useOpenRouterContext must be used within an OpenRouterProvider",
     );
   }
-  
+
   return context;
 }
 
 // Factory function to create a new OpenRouter service instance
-export function createOpenRouterService(config: OpenRouterServiceConfig): OpenRouterService {
+export function createOpenRouterService(
+  config: OpenRouterServiceConfig,
+): OpenRouterService {
   return new OpenRouterService(config);
-} 
+}

@@ -28,4 +28,4 @@ export const aiResponseSchema = z.object({
 // Types inferred from schemas
 export type GenerateFlashcardsInput = z.infer<typeof generateFlashcardsSchema>;
 export type FlashcardProposal = z.infer<typeof flashcardProposalSchema>;
-export type AIResponse = z.infer<typeof aiResponseSchema>; 
+export type AIResponse = z.infer<typeof aiResponseSchema>;

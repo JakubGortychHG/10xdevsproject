@@ -19,22 +19,22 @@ const PUBLIC_PATHS = [
 const isPublicPath = (pathname: string): boolean => {
   // Check exact matches
   if (PUBLIC_PATHS.includes(pathname)) return true;
-  
+
   // Check if it's login with parameters
   if (pathname.startsWith("/auth/login")) return true;
-  
+
   return false;
 };
 
 export const onRequest: MiddlewareHandler = defineMiddleware(
   async (context, next) => {
     const { cookies, request, locals } = context;
-    
+
     // Initialize auth service
     const authService = AuthService.getInstance();
-    authService.initializeClient({ 
+    authService.initializeClient({
       cookies,
-      headers: request.headers
+      headers: request.headers,
     });
 
     // Store Supabase client in locals for reuse
@@ -54,7 +54,7 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
         email: user.email,
         id: user.id,
       };
-  return next();
+      return next();
     }
 
     // If API request, return 401
@@ -71,4 +71,4 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
     const returnUrl = encodeURIComponent(context.url.pathname);
     return context.redirect(`/auth/login?returnTo=${returnUrl}`);
   },
-); 
+);

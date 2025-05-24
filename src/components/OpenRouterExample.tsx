@@ -35,15 +35,9 @@ export function OpenRouterExample() {
     setInput("");
 
     try {
-      const response = await sendMessage([
-        ...messages,
-        newMessage,
-      ]);
+      const response = await sendMessage([...messages, newMessage]);
 
-      setMessages((prev) => [
-        ...prev,
-        response.choices[0].message,
-      ]);
+      setMessages((prev) => [...prev, response.choices[0].message]);
     } catch (error) {
       // Error is already handled by the hook
       console.log("Failed to send message");
@@ -78,8 +72,12 @@ export function OpenRouterExample() {
                 onChange={handleModelChange}
               >
                 <option value="openai/gpt-4o-mini">GPT-4 Mini</option>
-                <option value="anthropic/claude-3-opus-20240229">Claude 3 Opus</option>
-                <option value="anthropic/claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                <option value="anthropic/claude-3-opus-20240229">
+                  Claude 3 Opus
+                </option>
+                <option value="anthropic/claude-3-sonnet-20240229">
+                  Claude 3 Sonnet
+                </option>
               </select>
             </label>
           </div>
@@ -116,9 +114,7 @@ export function OpenRouterExample() {
           Daily Usage: ${dailyUsage.toFixed(4)}
         </p>
         {error && (
-          <p className="text-sm text-red-600">
-            Error: {error.message}
-          </p>
+          <p className="text-sm text-red-600">Error: {error.message}</p>
         )}
       </div>
 
@@ -127,9 +123,7 @@ export function OpenRouterExample() {
           <div
             key={index}
             className={`mb-2 p-2 rounded ${
-              message.role === "user"
-                ? "bg-blue-100 ml-auto"
-                : "bg-gray-100"
+              message.role === "user" ? "bg-blue-100 ml-auto" : "bg-gray-100"
             }`}
           >
             <p className="text-sm font-medium mb-1">
@@ -164,4 +158,4 @@ export function OpenRouterExample() {
       </form>
     </div>
   );
-} 
+}

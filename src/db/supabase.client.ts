@@ -9,16 +9,19 @@ export const cookieOptions: CookieOptionsWithName = {
   sameSite: "lax",
 };
 
-const parseCookieHeader = (cookieHeader: string): { name: string; value: string }[] => {
+const parseCookieHeader = (
+  cookieHeader: string,
+): { name: string; value: string }[] => {
   if (!cookieHeader) return [];
-  
-  return cookieHeader.split(";")
-    .map(cookie => {
-      const [name, ...rest] = cookie.split("=").map(c => c.trim());
+
+  return cookieHeader
+    .split(";")
+    .map((cookie) => {
+      const [name, ...rest] = cookie.split("=").map((c) => c.trim());
       const value = rest.join("=");
       return { name, value };
     })
-    .filter(cookie => cookie.name && cookie.value);
+    .filter((cookie) => cookie.name && cookie.value);
 };
 
 export const createSupabaseServerInstance = (context: {
@@ -30,28 +33,24 @@ export const createSupabaseServerInstance = (context: {
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      "Missing Supabase environment variables. Check .env file and ensure variables are prefixed with PUBLIC_"
+      "Missing Supabase environment variables. Check .env file and ensure variables are prefixed with PUBLIC_",
     );
   }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      cookieOptions,
-      cookies: {
-        getAll() {
-          const cookieHeader = context.headers.get("Cookie");
-          return parseCookieHeader(cookieHeader ?? "");
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            context.cookies.set(name, value, options)
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookieOptions,
+    cookies: {
+      getAll() {
+        const cookieHeader = context.headers.get("Cookie");
+        return parseCookieHeader(cookieHeader ?? "");
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          context.cookies.set(name, value, options),
+        );
       },
     },
-  );
+  });
 
   return supabase;
-}; 
+};

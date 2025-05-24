@@ -13,21 +13,29 @@ const ExampleButton = ({
 
 describe("ExampleButton", () => {
   it("renders correctly", () => {
-    render(<ExampleButton onClick={() => { /* empty function */ }}>Click me</ExampleButton>);
-    
+    render(
+      <ExampleButton
+        onClick={() => {
+          /* empty function */
+        }}
+      >
+        Click me
+      </ExampleButton>,
+    );
+
     expect(
       screen.getByRole("button", { name: /click me/i }),
     ).toBeInTheDocument();
   });
-  
+
   it("calls onClick when clicked", async () => {
     const onClick = vi.fn();
     const user = userEvent.setup();
-    
+
     render(<ExampleButton onClick={onClick}>Click me</ExampleButton>);
-    
+
     await user.click(screen.getByRole("button", { name: /click me/i }));
-    
+
     expect(onClick).toHaveBeenCalledTimes(1);
   });
-}); 
+});

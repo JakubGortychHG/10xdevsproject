@@ -17,7 +17,7 @@ const resetPasswordSchema = z
       .min(8, "Hasło musi mieć minimum 8 znaków")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        "Hasło musi zawierać małą i wielką literę, cyfrę oraz znak specjalny"
+        "Hasło musi zawierać małą i wielką literę, cyfrę oraz znak specjalny",
       ),
     confirmPassword: z.string(),
   })
@@ -76,7 +76,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           </AlertDescription>
         </Alert>
         <Button
-          onClick={() => window.location.href = "/auth/login"}
+          onClick={() => (window.location.href = "/auth/login")}
           className="w-full"
         >
           Przejdź do logowania
@@ -137,4 +137,4 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       </Button>
     </form>
   );
-} 
+}

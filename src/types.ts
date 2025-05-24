@@ -5,9 +5,11 @@ import type { Database } from "./db/database.types";
 // Aliases for base database types extracted from the Database model definitions
 // ------------------------------------------------------------------------------------------------
 export type Flashcard = Database["public"]["Tables"]["flashcards"]["Row"];
-export type FlashcardInsert = Database["public"]["Tables"]["flashcards"]["Insert"];
+export type FlashcardInsert =
+  Database["public"]["Tables"]["flashcards"]["Insert"];
 export type Generation = Database["public"]["Tables"]["generations"]["Row"];
-export type GenerationErrorLog = Database["public"]["Tables"]["generation_error_logs"]["Row"];
+export type GenerationErrorLog =
+  Database["public"]["Tables"]["generation_error_logs"]["Row"];
 
 // ------------------------------------------------------------------------------------------------
 // 1. Flashcard DTO
@@ -15,7 +17,13 @@ export type GenerationErrorLog = Database["public"]["Tables"]["generation_error_
 // ------------------------------------------------------------------------------------------------
 export type FlashcardDto = Pick<
   Flashcard,
-  "id" | "front" | "back" | "source" | "generation_id" | "created_at" | "updated_at"
+  | "id"
+  | "front"
+  | "back"
+  | "source"
+  | "generation_id"
+  | "created_at"
+  | "updated_at"
 >;
 
 // ------------------------------------------------------------------------------------------------
@@ -119,7 +127,14 @@ export type GenerationDetailDto = Generation & {
 // ------------------------------------------------------------------------------------------------
 export type GenerationErrorLogDto = Pick<
   GenerationErrorLog,
-  "id" | "error_code" | "error_message" | "model" | "source_text_hash" | "source_text_length" | "created_at" | "user_id"
+  | "id"
+  | "error_code"
+  | "error_message"
+  | "model"
+  | "source_text_hash"
+  | "source_text_length"
+  | "created_at"
+  | "user_id"
 >;
 
 // ------------------------------------------------------------------------------------------------

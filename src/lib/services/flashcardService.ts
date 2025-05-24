@@ -12,7 +12,7 @@ export class FlashcardService {
     payload: FlashcardCreateDto,
     userId: string,
   ): Promise<FlashcardDto> {
-    this.logger.info("Creating new flashcard", { 
+    this.logger.info("Creating new flashcard", {
       userId,
       source: payload.source,
     });
@@ -60,8 +60,8 @@ export class FlashcardService {
     payloads: FlashcardCreateDto[],
     userId: string,
   ): Promise<{ flashcards: FlashcardDto[]; created_count: number }> {
-    this.logger.info("Creating multiple flashcards", { 
-      userId, 
+    this.logger.info("Creating multiple flashcards", {
+      userId,
       count: payloads.length,
     });
 
@@ -112,4 +112,4 @@ export class FlashcardService {
       created_count: flashcards.length,
     };
   }
-} 
+}

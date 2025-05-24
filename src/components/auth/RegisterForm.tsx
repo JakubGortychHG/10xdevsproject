@@ -14,7 +14,7 @@ const registerSchema = z
       .min(8, "Hasło musi mieć minimum 8 znaków")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        "Hasło musi zawierać małą i wielką literę, cyfrę oraz znak specjalny"
+        "Hasło musi zawierać małą i wielką literę, cyfrę oraz znak specjalny",
       ),
     confirmPassword: z.string(),
   })
@@ -80,9 +80,7 @@ export default function RegisterForm() {
           disabled={isLoading}
           className={errors.email ? "border-red-500" : ""}
         />
-        {errors.email && (
-          <p className="text-sm text-red-500">{errors.email}</p>
-        )}
+        {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
       </div>
 
       <div className="space-y-2">
@@ -129,4 +127,4 @@ export default function RegisterForm() {
       </Button>
     </form>
   );
-} 
+}
