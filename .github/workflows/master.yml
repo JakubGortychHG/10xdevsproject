@@ -90,11 +90,8 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Pages
     runs-on: ubuntu-latest
+    environment: production
     needs: build
-    
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     
     steps:
       - name: Checkout code
@@ -113,9 +110,23 @@ jobs:
           echo "Total size:"
           du -sh dist/
           
+      - name: Verify Cloudflare API Token
+        run: |
+          echo "Checking if CLOUDFLARE_API_TOKEN secret is available..."
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "CLOUDFLARE_API_TOKEN secret IS available."
+            ACTUAL_TOKEN_VALUE="${{ secrets.CLOUDFLARE_API_TOKEN }}"
+            echo "Length of CLOUDFLARE_API_TOKEN: ${#ACTUAL_TOKEN_VALUE}"
+            echo "First 5 chars of CLOUDFLARE_API_TOKEN: ${ACTUAL_TOKEN_VALUE:0:5}"
+          else
+            echo "CLOUDFLARE_API_TOKEN secret IS NOT available or is empty."
+          fi
+      
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
+        env:
+          WRANGLER_LOG: debug
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=10xdevsproject 
+          command: pages deploy dist 

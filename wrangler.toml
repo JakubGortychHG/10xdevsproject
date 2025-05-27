@@ -1,8 +1,11 @@
 name = "10xdevsproject"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
 
 [env.production]
 name = "10xdevsproject"
+compatibility_flags = ["nodejs_compat"]
 
 [env.production.vars]
 NODE_ENV = "production"
@@ -11,7 +14,4 @@ NODE_ENV = "production"
 [[env.production.kv_namespaces]]
 binding = "SESSION"
 id = "your_kv_namespace_id"
-preview_id = "your_preview_kv_namespace_id"
-
-# Pages configuration
-pages_build_output_dir = "dist" 
+preview_id = "your_preview_kv_namespace_id" 
