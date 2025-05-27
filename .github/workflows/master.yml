@@ -106,9 +106,16 @@ jobs:
           name: build-files
           path: dist/
           
+      - name: List build files
+        run: |
+          echo "Contents of dist directory:"
+          ls -la dist/
+          echo "Total size:"
+          du -sh dist/
+          
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=10xcards --compatibility-date=2024-12-01 
+          command: pages deploy dist --project-name=10xdevsproject --compatibility-date=2024-12-01 

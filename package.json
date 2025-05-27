@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "deploy": "wrangler pages deploy dist --project-name=10xcards"
+    "deploy": "wrangler pages deploy dist --project-name=10xdevsproject"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.1.1",
