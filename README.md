@@ -59,7 +59,7 @@ The MVP focuses on basic functionality, offering a minimalist interface and sati
 
 ### CI/CD and Hosting
 - **GitHub Actions** - For creating CI/CD pipelines
-- **DigitalOcean** - For hosting the application via Docker image
+- **Cloudflare Pages** - For hosting the application (SSG and SSR with Cloudflare Workers)
 
 ## Getting Started Locally
 
