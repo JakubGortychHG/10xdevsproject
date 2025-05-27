@@ -92,6 +92,51 @@ The MVP focuses on basic functionality, offering a minimalist interface and sati
 
 5. Open your browser and navigate to `http://localhost:3000`
 
+## Deployment
+
+### Cloudflare Pages Deployment
+
+This project is configured for deployment on Cloudflare Pages with automatic CI/CD via GitHub Actions.
+
+#### Prerequisites for Deployment
+1. Cloudflare account with Pages enabled
+2. Cloudflare KV namespace created for session storage
+3. GitHub repository secrets configured:
+   - `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare Account ID
+   - `CLOUDFLARE_API_TOKEN` - Cloudflare API token with Pages permissions
+   - `PUBLIC_SUPABASE_URL` - Your Supabase project URL
+   - `PUBLIC_SUPABASE_KEY` - Your Supabase anonymous key
+   - `PRIVATE_OPENROUTER_API_KEY` - Your OpenRouter API key
+4. Update `wrangler.toml` with your KV namespace IDs
+
+#### Automatic Deployment
+- Pushes to the `master` branch automatically trigger deployment
+- The workflow includes linting, unit testing, building, and deployment steps
+- Build artifacts are deployed to Cloudflare Pages
+
+#### Manual Deployment
+For manual deployment from your local machine:
+
+1. Install Wrangler CLI globally (if not already installed):
+   ```sh
+   npm install -g wrangler
+   ```
+
+2. Authenticate with Cloudflare:
+   ```sh
+   wrangler login
+   ```
+
+3. Build the application:
+   ```sh
+   npm run build
+   ```
+
+4. Deploy to Cloudflare Pages:
+   ```sh
+   npm run deploy
+   ```
+
 ## Available Scripts
 
 The following scripts are available in the project:

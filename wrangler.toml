@@ -1,0 +1,17 @@
+name = "10xcards"
+compatibility_date = "2024-12-01"
+
+[env.production]
+name = "10xcards"
+
+[env.production.vars]
+NODE_ENV = "production"
+
+# KV binding for sessions
+[[env.production.kv_namespaces]]
+binding = "SESSION"
+id = "your_kv_namespace_id"
+preview_id = "your_preview_kv_namespace_id"
+
+# Pages configuration
+pages_build_output_dir = "dist" 
