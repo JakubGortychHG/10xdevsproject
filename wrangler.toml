@@ -13,5 +13,5 @@ NODE_ENV = "production"
 # KV binding for sessions
 [[env.production.kv_namespaces]]
 binding = "SESSION"
-id = "your_kv_namespace_id"
-preview_id = "your_preview_kv_namespace_id" 
+id = "fd3a5c33d26346f6ad7c5ee4a24e888d"
+preview_id = "fd3a5c33d26346f6ad7c5ee4a24e888d"
