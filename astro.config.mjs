@@ -27,7 +27,6 @@ export default defineConfig({
     },
     ssr: {
       noExternal: ["msw"],
-      external: ["react", "react-dom"],
     },
     define: {
       global: "globalThis",
