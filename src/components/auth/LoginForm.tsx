@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { z } from "zod";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Loader2 } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "astro:env/client";
 
 const loginSchema = z.object({
   email: z.string().email("Wprowadź poprawny adres email"),
@@ -44,32 +45,31 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      // Initialize Supabase client
+      // Create Supabase client
       const supabase = createBrowserClient(
-        import.meta.env.PUBLIC_SUPABASE_URL,
-        import.meta.env.PUBLIC_SUPABASE_KEY,
+        PUBLIC_SUPABASE_URL,
+        PUBLIC_SUPABASE_KEY,
       );
 
-      // Sign in with Supabase directly
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: result.data.email,
-        password: result.data.password,
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (!data.session) {
-        throw new Error("Brak danych sesji");
-      }
-
-      // Successful login - redirect to returnTo or default
-      window.location.href = returnTo;
-    } catch (error) {
-      setGeneralError(
-        error instanceof Error ? error.message : "Błąd logowania",
+      const { data, error: authError } = await supabase.auth.signInWithPassword(
+        {
+          email: result.data.email,
+          password: result.data.password,
+        },
       );
+
+      if (authError) {
+        setGeneralError(authError.message);
+        return;
+      }
+
+      if (data.user) {
+        // Redirect to returnTo or home page
+        window.location.href = returnTo;
+      }
+    } catch (err) {
+      setGeneralError("An unexpected error occurred");
+      console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }

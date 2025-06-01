@@ -3,6 +3,7 @@ import type { Database } from "../../db/database.types";
 import type { GenerationCreateResponseDto } from "../../types";
 import { OpenRouterService, OpenRouterAuthError } from "./openRouterService";
 import type { Message } from "./openRouterService";
+import { PRIVATE_OPENROUTER_API_KEY } from "astro:env/server";
 
 export class GenerationService {
   private static instance: GenerationService;
@@ -10,15 +11,14 @@ export class GenerationService {
 
   private constructor() {
     // Initialize OpenRouter with API key from environment
-    const apiKey = import.meta.env.PRIVATE_OPENROUTER_API_KEY;
-    if (!apiKey) {
+    if (!PRIVATE_OPENROUTER_API_KEY) {
       throw new OpenRouterAuthError(
         "OPENROUTER_API_KEY environment variable is not set",
       );
     }
 
     this.openRouter = new OpenRouterService({
-      apiKey,
+      apiKey: PRIVATE_OPENROUTER_API_KEY,
       defaultModel: "openai/gpt-4o-mini", // Using GPT-4 Mini for best quality
       defaultParams: {
         temperature: 0.7,

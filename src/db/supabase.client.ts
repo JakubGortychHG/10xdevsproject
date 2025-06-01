@@ -1,5 +1,6 @@
 import type { AstroCookies } from "astro";
 import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "astro:env/client";
 
 export const cookieOptions: CookieOptionsWithName = {
   path: "/",
@@ -27,29 +28,30 @@ export const createSupabaseServerInstance = (context: {
   headers: Headers;
   cookies: AstroCookies;
 }) => {
-  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-  const supabaseKey = import.meta.env.PUBLIC_SUPABASE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
+  if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_KEY) {
     throw new Error(
-      "Missing Supabase environment variables. Check .env file and ensure variables are prefixed with PUBLIC_",
+      "Missing Supabase environment variables. Check .env file and ensure variables are properly configured",
     );
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookieOptions,
-    cookies: {
-      getAll() {
-        const cookieHeader = context.headers.get("Cookie");
-        return parseCookieHeader(cookieHeader ?? "");
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          context.cookies.set(name, value, options),
-        );
+  const supabase = createServerClient(
+    PUBLIC_SUPABASE_URL,
+    PUBLIC_SUPABASE_KEY,
+    {
+      cookieOptions,
+      cookies: {
+        getAll() {
+          const cookieHeader = context.headers.get("Cookie");
+          return parseCookieHeader(cookieHeader ?? "");
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            context.cookies.set(name, value, options),
+          );
+        },
       },
     },
-  });
+  );
 
   return supabase;
 };

@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, envField } from "astro/config";
 import { fileURLToPath } from "url";
 import path from "path";
 
@@ -15,6 +15,25 @@ export default defineConfig({
   output: "server",
   integrations: [react(), sitemap()],
   server: { port: 3000 },
+  env: {
+    schema: {
+      // Public variables (available on client and server)
+      PUBLIC_SUPABASE_URL: envField.string({
+        context: "client",
+        access: "public",
+      }),
+      PUBLIC_SUPABASE_KEY: envField.string({
+        context: "client",
+        access: "public",
+      }),
+
+      // Private variables (server-side only)
+      PRIVATE_OPENROUTER_API_KEY: envField.string({
+        context: "server",
+        access: "public",
+      }),
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
     resolve: {
