@@ -20,6 +20,11 @@ export default defineConfig({
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        ...(import.meta.env.PROD
+          ? {
+              "react-dom/server": "react-dom/server.edge",
+            }
+          : {}),
       },
     },
     optimizeDeps: {
