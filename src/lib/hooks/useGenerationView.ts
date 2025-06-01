@@ -109,8 +109,7 @@ export function useGenerationView() {
                 ...proposal,
                 front: updatedFront,
                 back: updatedBack,
-                // Status remains the same, editing doesn't auto-accept
-                // Only mark as edited to track that content was modified
+                status: "edited" as const,
                 isEdited: true,
               }
             : proposal,
@@ -131,14 +130,15 @@ export function useGenerationView() {
 
     try {
       const acceptedProposals = proposals.filter(
-        (p) => p.status === "accepted",
+        (p) => p.status === "accepted" || p.status === "edited",
       );
 
       const flashcardsToCreate: FlashcardCreateDto[] = acceptedProposals.map(
         (proposal) => ({
           front: proposal.front,
           back: proposal.back,
-          source: proposal.isEdited ? "ai-edited" : ("ai-full" as Source),
+          source:
+            proposal.status === "edited" ? "ai-edited" : ("ai-full" as Source),
           generation_id: generationId,
         }),
       );
@@ -236,7 +236,9 @@ export function useGenerationView() {
     ? proposals.find((p) => p.id === editingProposalId)
     : undefined;
 
-  const canSaveAccepted = proposals.some((p) => p.status === "accepted");
+  const canSaveAccepted = proposals.some(
+    (p) => p.status === "accepted" || p.status === "edited",
+  );
 
   const canSaveAll = proposals.some((p) => p.status === "pending");
 

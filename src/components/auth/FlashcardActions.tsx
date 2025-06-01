@@ -8,7 +8,7 @@ interface FlashcardActionsProps {
   onReject: (id: string) => void;
   onEdit: (id: string) => void;
   id: string;
-  status: "accepted" | "rejected" | "pending";
+  status: "accepted" | "rejected" | "pending" | "edited";
 }
 
 export default function FlashcardActions({

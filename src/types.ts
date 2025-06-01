@@ -147,7 +147,7 @@ export interface FlashcardProposalViewModel {
   back: string;
   originalFront: string;
   originalBack: string;
-  status: "pending" | "accepted" | "rejected";
+  status: "pending" | "accepted" | "rejected" | "edited";
   isEdited: boolean;
   generation_id: number;
 }
