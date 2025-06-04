@@ -45,10 +45,18 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      // Create Supabase client
+      // Create Supabase client with explicit cookie options
       const supabase = createBrowserClient(
         PUBLIC_SUPABASE_URL,
         PUBLIC_SUPABASE_KEY,
+        {
+          cookieOptions: {
+            path: "/",
+            secure: true,
+            sameSite: "strict",
+            maxAge: 60 * 60 * 24 * 7, // 7 dni
+          },
+        },
       );
 
       const { data, error: authError } = await supabase.auth.signInWithPassword(
@@ -59,17 +67,34 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
       );
 
       if (authError) {
+        console.error("LoginForm: Authentication error:", authError.message);
         setGeneralError(authError.message);
         return;
       }
 
       if (data.user) {
-        // Redirect to returnTo or home page
-        window.location.href = returnTo;
+        // Dodatkowa próba synchronizacji sesji przed przekierowaniem
+        if (data.session) {
+          try {
+            // Można spróbować ręcznie ustawić sesję
+            await supabase.auth.setSession({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+            });
+          } catch (err) {
+            console.error("LoginForm: Error setting session manually:", err);
+          }
+        }
+        
+        // Dodaj małe opóźnienie przed przekierowaniem, aby dać czas na zapisanie sesji
+        setTimeout(() => {
+          // Redirect to returnTo or home page
+          window.location.href = returnTo;
+        }, 500);
       }
     } catch (err) {
+      console.error("LoginForm: Unexpected error:", err);
       setGeneralError("An unexpected error occurred");
-      console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }

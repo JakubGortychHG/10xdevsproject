@@ -17,6 +17,7 @@ export class AuthService {
   private static instance: AuthService;
   private readonly logger = LoggerService.getInstance();
   private supabase!: SupabaseClient;
+  private cookies?: AstroCookies;
 
   private constructor() {
     this.logger = LoggerService.getInstance();
@@ -33,7 +34,9 @@ export class AuthService {
     headers: Headers;
     cookies: AstroCookies;
   }): void {
+    this.cookies = context.cookies;
     this.supabase = createSupabaseServerInstance(context);
+    this.logger.debug("AuthService: Client initialized");
   }
 
   public getClient(): SupabaseClient {
@@ -50,6 +53,8 @@ export class AuthService {
     password: string,
   ): Promise<{ user: User; session: Session }> {
     try {
+      this.logger.debug("AuthService: Attempting sign in", { email });
+      
       const { data, error } = await this.supabase.auth.signInWithPassword({
         email,
         password,
@@ -65,6 +70,10 @@ export class AuthService {
         throw new AuthError("Authentication failed");
       }
 
+      this.logger.debug("AuthService: Sign in successful", { 
+        email: data.user.email,
+      });
+
       return {
         user: data.user,
         session: data.session,
@@ -77,12 +86,16 @@ export class AuthService {
 
   public async signOut(): Promise<void> {
     try {
+      this.logger.debug("AuthService: Attempting sign out");
+      
       const { error } = await this.supabase.auth.signOut();
 
       if (error) {
         this.logger.error("Sign out failed", { error });
         throw new AuthError("Failed to sign out");
       }
+      
+      this.logger.debug("AuthService: Sign out successful");
     } catch (error) {
       this.logger.error("Unexpected error during sign out", { error });
       throw new AuthError("Failed to sign out");
@@ -91,6 +104,8 @@ export class AuthService {
 
   public async getUser(): Promise<User | null> {
     try {
+      this.logger.debug("AuthService: Retrieving user");
+      
       const {
         data: { user },
         error,
@@ -101,6 +116,11 @@ export class AuthService {
         return null;
       }
 
+      this.logger.debug("AuthService: User retrieved", {
+        hasUser: !!user,
+        email: user?.email,
+      });
+      
       return user;
     } catch (error) {
       this.logger.error("Unexpected error while getting user", { error });

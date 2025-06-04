@@ -21,13 +21,11 @@ if (reason === "logout") {
   returnTo = "/generate";
 }
 
-// Check if user is already logged in (but skip if we just logged out)
-if (reason !== "logout") {
-  const user = await authService.getUser();
-  if (user) {
-    return Astro.redirect(returnTo);
-  }
-}
+// TEMPORARY FIX: Don't check if user is logged in on login page
+// This prevents false redirects due to potentially invalid cookies
+console.log(
+  "DEBUG: Login page - skipping user check to prevent false redirects",
+);
 ---
 
 <Layout title="Logowanie - 10xCards">

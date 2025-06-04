@@ -29,6 +29,7 @@ const isPublicPath = (pathname: string): boolean => {
 export const onRequest: MiddlewareHandler = defineMiddleware(
   async (context, next) => {
     const { cookies, request, locals } = context;
+    const pathname = context.url.pathname;
 
     // Initialize auth service
     const authService = AuthService.getInstance();
@@ -41,24 +42,32 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
     locals.supabase = authService.getClient();
 
     // Skip auth check for public paths
-    if (isPublicPath(context.url.pathname)) {
+    if (isPublicPath(pathname)) {
+      // Nawet dla publicznych ścieżek sprawdźmy, czy user jest zalogowany
+      try {
+        const user = await authService.getUser();
+        if (user) {
+          locals.user = user;
+        }
+      } catch (error) {
+        // Ignore errors for public paths
+      }
+      
       return next();
     }
 
     // IMPORTANT: Always get user session first before any other operations
+    // TODO: Consider checking session expiration here as well
     const user = await authService.getUser();
 
     if (user) {
       // Add user to locals for use in routes
-      locals.user = {
-        email: user.email,
-        id: user.id,
-      };
+      locals.user = user;
       return next();
     }
 
     // If API request, return 401
-    if (context.url.pathname.startsWith("/api/")) {
+    if (pathname.startsWith("/api/")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: {
@@ -68,7 +77,7 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
     }
 
     // For page requests, redirect to login with return URL
-    const returnUrl = encodeURIComponent(context.url.pathname);
+    const returnUrl = encodeURIComponent(pathname);
     return context.redirect(`/auth/login?returnTo=${returnUrl}`);
   },
 );

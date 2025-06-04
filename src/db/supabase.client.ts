@@ -2,11 +2,13 @@ import type { AstroCookies } from "astro";
 import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "astro:env/client";
 
+// Konfiguracja ciasteczek
 export const cookieOptions: CookieOptionsWithName = {
   path: "/",
   secure: true,
   httpOnly: true,
-  sameSite: "lax",
+  sameSite: "strict",
+  maxAge: 60 * 60 * 24 * 7, // 7 dni
 };
 
 const parseCookieHeader = (
@@ -41,6 +43,7 @@ export const createSupabaseServerInstance = (context: {
       cookieOptions,
       cookies: {
         getAll() {
+          // Zgodnie z wytycznymi - używamy tylko parseCookieHeader
           const cookieHeader = context.headers.get("Cookie");
           return parseCookieHeader(cookieHeader ?? "");
         },

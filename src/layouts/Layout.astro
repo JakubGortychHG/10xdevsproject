@@ -7,6 +7,12 @@ interface Props {
 }
 
 const { title = "10x Astro Starter" } = Astro.props;
+
+// Pobierz dane użytkownika z middleware
+const user = Astro.locals.user;
+
+// Przekaż dane użytkownika do klienta
+const userData = user ? { id: user.id, email: user.email } : null;
 ---
 
 <!doctype html>
@@ -17,6 +23,11 @@ const { title = "10x Astro Starter" } = Astro.props;
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    
+    <!-- Wstrzyknięcie danych użytkownika do globalnego obiektu -->
+    <script define:vars={{ userData }}>
+      window.__USER_DATA__ = userData;
+    </script>
   </head>
   <body class="min-h-screen flex flex-col">
     <header class="border-b bg-white">
