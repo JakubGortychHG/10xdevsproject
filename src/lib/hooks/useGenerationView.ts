@@ -137,8 +137,7 @@ export function useGenerationView() {
         (proposal) => ({
           front: proposal.front,
           back: proposal.back,
-          source:
-            proposal.status === "edited" ? "ai-edited" : ("ai-full" as Source),
+          source: proposal.isEdited ? "ai-edited" : ("ai-full" as Source),
           generation_id: generationId,
         }),
       );
@@ -172,7 +171,7 @@ export function useGenerationView() {
 
   // Handler for saving all non-rejected proposals
   const handleSaveAll = useCallback(async () => {
-    // First mark all non-rejected proposals as accepted
+    // First mark all non-rejected proposals as accepted, but preserve isEdited flag
     const updatedProposals = proposals.map((proposal) =>
       proposal.status !== "rejected"
         ? { ...proposal, status: "accepted" as const }
