@@ -26,10 +26,40 @@ const isPublicPath = (pathname: string): boolean => {
   return false;
 };
 
+// Add CORS headers to response
+const addCorsHeaders = (response: Response): Response => {
+  const newHeaders = new Headers(response.headers);
+  newHeaders.set("Access-Control-Allow-Origin", "*");
+  newHeaders.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS",
+  );
+  newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders,
+  });
+};
+
 export const onRequest: MiddlewareHandler = defineMiddleware(
   async (context, next) => {
     const { cookies, request, locals } = context;
     const pathname = context.url.pathname;
+
+    // Handle CORS preflight requests
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400",
+        },
+      });
+    }
 
     // Initialize auth service
     const authService = AuthService.getInstance();
@@ -53,7 +83,8 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
         // Ignore errors for public paths
       }
 
-      return next();
+      const response = await next();
+      return pathname.startsWith("/api/") ? addCorsHeaders(response) : response;
     }
 
     // IMPORTANT: Always get user session first before any other operations
@@ -63,17 +94,20 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
     if (user) {
       // Add user to locals for use in routes
       locals.user = user;
-      return next();
+      const response = await next();
+      return pathname.startsWith("/api/") ? addCorsHeaders(response) : response;
     }
 
     // If API request, return 401
     if (pathname.startsWith("/api/")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return addCorsHeaders(
+        new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      );
     }
 
     // For page requests, redirect to login with return URL

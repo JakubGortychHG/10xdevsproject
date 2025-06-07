@@ -142,16 +142,30 @@ export function useGenerationView() {
         }),
       );
 
+      console.log("Saving accepted flashcards:", {
+        count: flashcardsToCreate.length,
+      });
+
       const response = await fetch("/api/flashcards", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ flashcards: flashcardsToCreate }),
+        credentials: "include",
       });
 
+      console.log("Save response status:", response.status);
+
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("Save error:", {
+          status: response.status,
+          text: errorText,
+        });
+        throw new Error(
+          `Error ${response.status}: ${response.statusText || errorText}`,
+        );
       }
 
       // Clear proposals after successful save
@@ -161,6 +175,7 @@ export function useGenerationView() {
       // Show success toast
       ErrorDisplay.showSuccess("Fiszki zostały pomyślnie zapisane");
     } catch (err: unknown) {
+      console.error("Save error details:", err);
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
       ErrorDisplay.showSaveError(error.message);
@@ -197,16 +212,30 @@ export function useGenerationView() {
           generation_id: generationId,
         }));
 
+      console.log("Saving all flashcards:", {
+        count: flashcardsToCreate.length,
+      });
+
       const response = await fetch("/api/flashcards", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ flashcards: flashcardsToCreate }),
+        credentials: "include",
       });
 
+      console.log("Save all response status:", response.status);
+
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("Save all error:", {
+          status: response.status,
+          text: errorText,
+        });
+        throw new Error(
+          `Error ${response.status}: ${response.statusText || errorText}`,
+        );
       }
 
       // Clear proposals after successful save
@@ -216,6 +245,7 @@ export function useGenerationView() {
       // Show success toast
       ErrorDisplay.showSuccess("Wszystkie fiszki zostały pomyślnie zapisane");
     } catch (err: unknown) {
+      console.error("Save all error details:", err);
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
       ErrorDisplay.showSaveError(error.message);
