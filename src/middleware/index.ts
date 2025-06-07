@@ -84,8 +84,14 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
         if (user) {
           locals.user = user;
         }
-      } catch {
-        // Ignore errors for public paths
+      } catch (error) {
+        // Log auth errors for debugging, but don't block public paths
+        if (error instanceof Error && error.message.includes("1003")) {
+          console.warn(
+            "Cloudflare Workers network error (1003) in public path:",
+            error.message,
+          );
+        }
       }
 
       const response = await next();
@@ -93,9 +99,64 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
     }
 
     // IMPORTANT: Always get user session first before any other operations
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    let user = null;
+    try {
+      const result = await supabase.auth.getUser();
+
+      // Check for error in response (not thrown exception)
+      if (result.error) {
+        if (result.error.message && result.error.message.includes("1003")) {
+          console.warn(
+            "Cloudflare Workers network error (1003) in response:",
+            result.error.message,
+          );
+          // Try to get session from tokens as fallback
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (session?.user) {
+              user = session.user;
+              console.info(
+                "Recovered user from session after 1003 error in response",
+              );
+            }
+          } catch (sessionError) {
+            console.warn("Session fallback also failed:", sessionError);
+          }
+        } else {
+          console.warn("Auth error in protected route:", result.error.message);
+        }
+      } else {
+        user = result.data.user;
+      }
+    } catch (error) {
+      // Handle specific Cloudflare Workers errors (thrown exceptions)
+      if (error instanceof Error) {
+        if (error.message.includes("1003")) {
+          console.warn(
+            "Cloudflare Workers network error (1003) in catch:",
+            error.message,
+          );
+          // Try to get session from tokens as fallback
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (session?.user) {
+              user = session.user;
+              console.info(
+                "Recovered user from session after 1003 error in catch",
+              );
+            }
+          } catch (sessionError) {
+            console.warn("Session fallback also failed:", sessionError);
+          }
+        } else {
+          console.warn("Auth error in protected route:", error.message);
+        }
+      }
+    }
 
     if (user) {
       // Add user to locals for use in routes

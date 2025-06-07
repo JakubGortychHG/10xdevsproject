@@ -51,6 +51,29 @@ export const createSupabaseServerInstance = (context: {
           );
         },
       },
+      global: {
+        headers: {
+          "X-Client-Info": "10xCards/1.0",
+        },
+        fetch: (url, options = {}) => {
+          // Add timeout for Cloudflare Workers
+          return fetch(url, {
+            ...options,
+            signal: AbortSignal.timeout(5000), // 5 second timeout
+          }).catch((error) => {
+            if (error.name === "TimeoutError") {
+              throw new Error("Network timeout - please try again");
+            }
+            throw error;
+          });
+        },
+      },
+      auth: {
+        detectSessionInUrl: false,
+        persistSession: true,
+        autoRefreshToken: true,
+        debug: false,
+      },
     },
   );
 

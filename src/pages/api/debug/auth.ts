@@ -25,9 +25,10 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       headers: request.headers,
     });
 
-    // Try to get user
+    // Try to get user with fallback mechanism (same as middleware)
     let userInfo = null;
     let authError = null;
+    let fallbackUsed = false;
 
     try {
       const { data, error } = await supabase.auth.getUser();
@@ -37,6 +38,37 @@ export const GET: APIRoute = async ({ request, cookies }) => {
           message: error.message,
           status: error.status,
         };
+
+        // IMPORTANT: Check if the error from getUser() contains 1003
+        if (error.message && error.message.includes("1003")) {
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (session?.user) {
+              userInfo = {
+                id: session.user.id,
+                email: session.user.email,
+                created_at: session.user.created_at,
+                last_sign_in_at: session.user.last_sign_in_at,
+              };
+              fallbackUsed = true;
+              authError = {
+                ...authError,
+                fallback_note:
+                  "User recovered from session after 1003 error in response",
+              };
+            }
+          } catch (sessionError) {
+            authError = {
+              ...authError,
+              session_fallback_error:
+                sessionError instanceof Error
+                  ? sessionError.message
+                  : String(sessionError),
+            };
+          }
+        }
       } else {
         userInfo = data.user
           ? {
@@ -52,6 +84,37 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         name: error instanceof Error ? error.name : "Unknown",
         message: error instanceof Error ? error.message : String(error),
       };
+
+      // Apply fallback logic for thrown errors with 1003
+      if (error instanceof Error && error.message.includes("1003")) {
+        try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session?.user) {
+            userInfo = {
+              id: session.user.id,
+              email: session.user.email,
+              created_at: session.user.created_at,
+              last_sign_in_at: session.user.last_sign_in_at,
+            };
+            fallbackUsed = true;
+            authError = {
+              ...authError,
+              fallback_note:
+                "User recovered from session after 1003 error in catch",
+            };
+          }
+        } catch (sessionError) {
+          authError = {
+            ...authError,
+            session_fallback_error:
+              sessionError instanceof Error
+                ? sessionError.message
+                : String(sessionError),
+          };
+        }
+      }
     }
 
     // Get session info
@@ -92,6 +155,14 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         user: userInfo,
         error: authError,
         session: sessionInfo,
+        fallback_used: fallbackUsed,
+        debug_notes: {
+          error_contains_1003: authError
+            ? authError.message.includes("1003")
+            : false,
+          error_type: authError ? typeof authError.message : "no_error",
+          raw_error_message: authError ? authError.message : null,
+        },
       },
       headers: {
         user_agent: request.headers.get("User-Agent") || "unknown",
