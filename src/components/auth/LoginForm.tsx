@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Loader2 } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "astro:env/client";
 import { LoggerService } from "../../lib/services/loggerService";
 
 const loginSchema = z.object({
@@ -46,19 +45,21 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      // Create Supabase client with explicit cookie options
+      // Create Supabase client with explicit cookie options matching server config
       const supabase = createBrowserClient(
-        PUBLIC_SUPABASE_URL,
-        PUBLIC_SUPABASE_KEY,
+        import.meta.env.PUBLIC_SUPABASE_URL,
+        import.meta.env.PUBLIC_SUPABASE_KEY,
         {
           cookieOptions: {
             path: "/",
             secure: true,
-            sameSite: "strict",
+            sameSite: "lax", // Changed from "strict" to match server config
             maxAge: 60 * 60 * 24 * 7, // 7 dni
           },
         },
       );
+
+      console.log("LoginForm: Attempting login with email:", result.data.email);
 
       const { data, error: authError } = await supabase.auth.signInWithPassword(
         {
@@ -66,6 +67,12 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
           password: result.data.password,
         },
       );
+
+      console.log("LoginForm: Login response:", {
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+        error: authError?.message,
+      });
 
       if (authError) {
         LoggerService.getInstance().error("LoginForm: Authentication error", {
@@ -75,30 +82,33 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
         return;
       }
 
-      if (data.user) {
-        // Dodatkowa próba synchronizacji sesji przed przekierowaniem
-        if (data.session) {
-          try {
-            // Można spróbować ręcznie ustawić sesję
-            await supabase.auth.setSession({
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-            });
-          } catch (err) {
-            LoggerService.getInstance().error(
-              "LoginForm: Error setting session manually",
-              {
-                error: err instanceof Error ? err.message : String(err),
-              },
-            );
-          }
+      if (data.user && data.session) {
+        console.log("LoginForm: Login successful, setting up session");
+
+        // Force a session refresh to ensure cookies are properly set
+        try {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+          console.log("LoginForm: Session set successfully");
+        } catch (err) {
+          console.error("LoginForm: Error setting session:", err);
+          LoggerService.getInstance().error(
+            "LoginForm: Error setting session manually",
+            {
+              error: err instanceof Error ? err.message : String(err),
+            },
+          );
         }
 
-        // Dodaj małe opóźnienie przed przekierowaniem, aby dać czas na zapisanie sesji
+        // Wait longer for cookies to be set in Cloudflare environment
+        console.log("LoginForm: Redirecting to:", returnTo);
         setTimeout(() => {
-          // Redirect to returnTo or home page
           window.location.href = returnTo;
-        }, 500);
+        }, 1000); // Increased delay for Cloudflare
+      } else {
+        setGeneralError("Login failed - no user or session data received");
       }
     } catch (err) {
       LoggerService.getInstance().error("LoginForm: Unexpected error", {

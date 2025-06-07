@@ -1,16 +1,16 @@
 import type { AstroCookies } from "astro";
 import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "astro:env/client";
+import type { Database } from "./database.types";
 
-// Konfiguracja ciasteczek zgodnie z wytycznymi
+// Konfiguracja zgodna z @supabase-auth.mdc guidelines
 export const cookieOptions: CookieOptionsWithName = {
   path: "/",
   secure: true,
   httpOnly: true,
   sameSite: "lax",
-  maxAge: 60 * 60 * 24 * 7, // 7 dni
 };
 
+// KLUCZOWA funkcja zgodna z @supabase-auth.mdc - była brakująca!
 const parseCookieHeader = (
   cookieHeader: string,
 ): { name: string; value: string }[] => {
@@ -30,49 +30,50 @@ export const createSupabaseServerInstance = (context: {
   headers: Headers;
   cookies: AstroCookies;
 }) => {
-  if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_KEY) {
+  // Używamy import.meta.env zgodnie z guidelines zamiast astro:env/client
+  if (
+    !import.meta.env.PUBLIC_SUPABASE_URL ||
+    !import.meta.env.PUBLIC_SUPABASE_KEY
+  ) {
     throw new Error(
       "Missing Supabase environment variables. Check .env file and ensure variables are properly configured",
     );
   }
 
-  const supabase = createServerClient(
-    PUBLIC_SUPABASE_URL,
-    PUBLIC_SUPABASE_KEY,
+  const supabase = createServerClient<Database>(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_KEY,
     {
       cookieOptions,
       cookies: {
+        // KLUCZOWE: TYLKO getAll/setAll zgodnie z @supabase-auth.mdc
         getAll() {
-          return parseCookieHeader(context.headers.get("Cookie") ?? "");
+          const cookieHeader = context.headers.get("Cookie") ?? "";
+          const cookies = parseCookieHeader(cookieHeader);
+
+          console.log("Getting cookies:", {
+            cookieHeaderLength: cookieHeader.length,
+            parsedCount: cookies.length,
+            supabaseCookies: cookies.filter((c) => c.name.startsWith("sb-"))
+              .length,
+          });
+
+          return cookies;
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            context.cookies.set(name, value, options),
-          );
-        },
-      },
-      global: {
-        headers: {
-          "X-Client-Info": "10xCards/1.0",
-        },
-        fetch: (url, options = {}) => {
-          // Add timeout for Cloudflare Workers
-          return fetch(url, {
-            ...options,
-            signal: AbortSignal.timeout(5000), // 5 second timeout
-          }).catch((error) => {
-            if (error.name === "TimeoutError") {
-              throw new Error("Network timeout - please try again");
+          console.log("Setting cookies:", {
+            count: cookiesToSet.length,
+            names: cookiesToSet.map((c) => c.name),
+          });
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              context.cookies.set(name, value, options);
+            } catch (error) {
+              console.error("Error setting cookie:", { name, error });
             }
-            throw error;
           });
         },
-      },
-      auth: {
-        detectSessionInUrl: false,
-        persistSession: true,
-        autoRefreshToken: true,
-        debug: false,
       },
     },
   );

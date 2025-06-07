@@ -1,11 +1,10 @@
-import type { MiddlewareHandler } from "astro";
 import { defineMiddleware } from "astro:middleware";
+import type { MiddlewareHandler } from "astro";
 import { createSupabaseServerInstance } from "../db/supabase.client";
 
 // Public paths that don't require authentication
 const PUBLIC_PATHS = [
   "/",
-  "/generate",
   "/auth/login",
   "/auth/register",
   "/auth/reset-password",
@@ -14,6 +13,7 @@ const PUBLIC_PATHS = [
   "/api/auth/reset-password",
   "/api/generations",
   "/api/debug/auth",
+  "/debug/auth", // Debug page
 ];
 
 // Helper function to check if path is public
@@ -65,7 +65,7 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
       });
     }
 
-    // Create Supabase client directly according to guidelines
+    // Create Supabase client according to @supabase-auth guidelines
     const supabase = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
@@ -76,7 +76,7 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
 
     // Skip auth check for public paths
     if (isPublicPath(pathname)) {
-      // Even for public paths, check if user is logged in
+      // Even for public paths, try to get user if logged in
       try {
         const {
           data: { user },
@@ -86,12 +86,7 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
         }
       } catch (error) {
         // Log auth errors for debugging, but don't block public paths
-        if (error instanceof Error && error.message.includes("1003")) {
-          console.warn(
-            "Cloudflare Workers network error (1003) in public path:",
-            error.message,
-          );
-        }
+        console.warn("Auth check failed on public path:", error);
       }
 
       const response = await next();
@@ -99,70 +94,26 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
     }
 
     // IMPORTANT: Always get user session first before any other operations
-    let user = null;
-    try {
-      const result = await supabase.auth.getUser();
-
-      // Check for error in response (not thrown exception)
-      if (result.error) {
-        if (result.error.message && result.error.message.includes("1003")) {
-          console.warn(
-            "Cloudflare Workers network error (1003) in response:",
-            result.error.message,
-          );
-          // Try to get session from tokens as fallback
-          try {
-            const {
-              data: { session },
-            } = await supabase.auth.getSession();
-            if (session?.user) {
-              user = session.user;
-              console.info(
-                "Recovered user from session after 1003 error in response",
-              );
-            }
-          } catch (sessionError) {
-            console.warn("Session fallback also failed:", sessionError);
-          }
-        } else {
-          console.warn("Auth error in protected route:", result.error.message);
-        }
-      } else {
-        user = result.data.user;
-      }
-    } catch (error) {
-      // Handle specific Cloudflare Workers errors (thrown exceptions)
-      if (error instanceof Error) {
-        if (error.message.includes("1003")) {
-          console.warn(
-            "Cloudflare Workers network error (1003) in catch:",
-            error.message,
-          );
-          // Try to get session from tokens as fallback
-          try {
-            const {
-              data: { session },
-            } = await supabase.auth.getSession();
-            if (session?.user) {
-              user = session.user;
-              console.info(
-                "Recovered user from session after 1003 error in catch",
-              );
-            }
-          } catch (sessionError) {
-            console.warn("Session fallback also failed:", sessionError);
-          }
-        } else {
-          console.warn("Auth error in protected route:", error.message);
-        }
-      }
-    }
+    // Following @supabase-auth guidelines - simple auth.getUser() call
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (user) {
       // Add user to locals for use in routes
       locals.user = user;
       const response = await next();
       return pathname.startsWith("/api/") ? addCorsHeaders(response) : response;
+    }
+
+    // Log auth errors for debugging
+    if (error) {
+      console.warn("Authentication failed:", {
+        message: error.message,
+        status: error.status,
+        pathname,
+      });
     }
 
     // If API request, return 401

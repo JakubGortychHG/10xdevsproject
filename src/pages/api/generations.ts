@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { generateFlashcardsSchema } from "../../lib/schemas/generationSchemas";
 import { GenerationService } from "../../lib/services/generationService";
 import { LoggerService } from "../../lib/services/loggerService";
-import { AuthService } from "../../lib/services/authService";
 import crypto from "crypto";
 
 export const prerender = false;
@@ -10,12 +9,11 @@ export const prerender = false;
 const logger = LoggerService.getInstance();
 
 // POST /api/generations - Generate flashcards from text
-export const POST: APIRoute = async ({ request, locals, cookies }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Get authenticated user if available
-    const authService = AuthService.getInstance();
-    authService.initializeClient({ cookies, headers: request.headers });
-    const user = await authService.getUser();
+    // Get authenticated user from locals (set by middleware)
+    // This endpoint supports both authenticated and anonymous users
+    const user = locals.user;
 
     // Parse request body
     let body;
