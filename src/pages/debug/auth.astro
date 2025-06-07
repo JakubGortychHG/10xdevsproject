@@ -1,0 +1,85 @@
+---
+// Debug page for authentication state
+---
+
+<!-- eslint-disable -->
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auth Debug - 10xCards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-3xl font-bold mb-6">Authentication Debug</h1>
+
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Debug Information</h2>
+        <button
+          id="loadDebug"
+          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4"
+        >
+          Load Debug Info
+        </button>
+        <pre
+          id="debugOutput"
+          class="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-96">
+        </pre>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div class="space-x-4">
+          <a
+            href="/auth/login"
+            class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Go to Login
+          </a>
+          <a
+            href="/generate"
+            class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+          >
+            Go to Generate
+          </a>
+          <a
+            href="/"
+            class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          >
+            Go to Home
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- eslint-disable-next-line -->
+    <script is:inline>
+      function loadDebugInfo() {
+        const output = document.getElementById("debugOutput");
+        if (!output) return;
+
+        output.textContent = "Loading...";
+
+        fetch("/api/debug/auth")
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (data) {
+            output.textContent = JSON.stringify(data, null, 2);
+          })
+          .catch(function (error) {
+            output.textContent = "Error loading debug info: " + error.message;
+          });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const button = document.getElementById("loadDebug");
+        if (button) {
+          button.addEventListener("click", loadDebugInfo);
+          loadDebugInfo();
+        }
+      });
+    </script>
+  </body>
+</html>

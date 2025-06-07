@@ -23,7 +23,7 @@ const isPublicPath = (pathname: string): boolean => {
 
   // Check if it's login with parameters
   if (pathname.startsWith("/auth/login")) return true;
-  
+
   // Check if it's debug paths
   if (pathname.startsWith("/debug/")) return true;
 

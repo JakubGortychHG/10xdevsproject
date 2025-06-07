@@ -60,11 +60,22 @@ const reactConfig = tseslint.config({
   },
 });
 
+const debugConfig = tseslint.config({
+  files: ["**/debug/*.astro"],
+  rules: {
+    "prettier/prettier": "off",
+  },
+});
+
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  {
+    ignores: ["src/pages/debug/auth.astro"],
+  },
   baseConfig,
   jsxA11yConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],
+  debugConfig,
   eslintPluginPrettier,
 );
