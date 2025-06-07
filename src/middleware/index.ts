@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "astro";
 import { defineMiddleware } from "astro:middleware";
-import { AuthService } from "../lib/services/authService";
+import { createSupabaseServerInstance } from "../db/supabase.client";
 
 // Public paths that don't require authentication
 const PUBLIC_PATHS = [
@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   "/api/auth/register",
   "/api/auth/reset-password",
   "/api/generations",
+  "/api/debug/auth",
 ];
 
 // Helper function to check if path is public
@@ -22,6 +23,9 @@ const isPublicPath = (pathname: string): boolean => {
 
   // Check if it's login with parameters
   if (pathname.startsWith("/auth/login")) return true;
+  
+  // Check if it's debug paths
+  if (pathname.startsWith("/debug/")) return true;
 
   return false;
 };
@@ -61,21 +65,22 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
       });
     }
 
-    // Initialize auth service
-    const authService = AuthService.getInstance();
-    authService.initializeClient({
+    // Create Supabase client directly according to guidelines
+    const supabase = createSupabaseServerInstance({
       cookies,
       headers: request.headers,
     });
 
     // Store Supabase client in locals for reuse
-    locals.supabase = authService.getClient();
+    locals.supabase = supabase;
 
     // Skip auth check for public paths
     if (isPublicPath(pathname)) {
-      // Nawet dla publicznych ścieżek sprawdźmy, czy user jest zalogowany
+      // Even for public paths, check if user is logged in
       try {
-        const user = await authService.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           locals.user = user;
         }
@@ -88,8 +93,9 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
     }
 
     // IMPORTANT: Always get user session first before any other operations
-    // TODO: Consider checking session expiration here as well
-    const user = await authService.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (user) {
       // Add user to locals for use in routes
