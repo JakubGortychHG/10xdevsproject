@@ -191,7 +191,13 @@ Guidelines:
         model: response.model,
       };
 
-      console.log("Attempting to insert generation record:", insertData);
+      // Log only safe metadata, never user_id or sensitive data
+      console.log("Attempting to insert generation record:", {
+        source_text_length: insertData.source_text_length,
+        generated_count: insertData.generated_count,
+        generation_duration: insertData.generation_duration,
+        model: insertData.model,
+      });
 
       const { data: generation, error: dbError } = await supabase
         .from("generations")
@@ -236,7 +242,12 @@ Guidelines:
         );
       }
 
-      console.log("Generation record created successfully:", generation);
+      // Log only safe metadata, never full generation record
+      console.log("Generation record created successfully:", {
+        id: generation.id,
+        generated_count: generation.generated_count,
+        generation_duration: generation.generation_duration,
+      });
 
       return {
         generation_id: generation.id,

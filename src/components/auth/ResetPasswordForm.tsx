@@ -60,7 +60,14 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     setIsLoading(true);
     // TODO: Use token for actual password reset implementation
     // The token will be used to verify the reset request with the auth service
-    console.log("Reset token:", token);
+    // SECURITY: Never log sensitive tokens - removed console.log
+
+    // Validate token exists (but don't log it)
+    if (!token) {
+      setGeneralError("Invalid reset token");
+      setIsLoading(false);
+      return;
+    }
 
     // Form submission will be handled by auth service
     // For now, simulate success

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "astro:env/client";
+import { LoggerService } from "../services/loggerService";
 
 // Deklaracja typu dla window.__USER_DATA__
 declare global {
@@ -69,7 +70,9 @@ export function useAuth() {
           }
         }
       } catch (error) {
-        console.error("useAuth: Error getting session:", error);
+        LoggerService.getInstance().error("useAuth: Error getting session", {
+          error: error instanceof Error ? error.message : String(error),
+        });
         // Tylko ustaw na null jeśli nie mamy danych z serwera
         if (!isServerDataRef.current) {
           setUser(null);
@@ -125,7 +128,9 @@ export function useAuth() {
       // Force a page reload to clear any cached state
       window.location.href = "/auth/login?reason=logout";
     } catch (error) {
-      console.error("useAuth: Error signing out:", error);
+      LoggerService.getInstance().error("useAuth: Error signing out", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Still redirect on error, but with an error parameter
       window.location.href = "/auth/login?error=signout_failed";
     }

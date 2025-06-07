@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "../ui/alert";
 import { Loader2 } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "astro:env/client";
+import { LoggerService } from "../../lib/services/loggerService";
 
 const loginSchema = z.object({
   email: z.string().email("Wprowadź poprawny adres email"),
@@ -67,7 +68,9 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
       );
 
       if (authError) {
-        console.error("LoginForm: Authentication error:", authError.message);
+        LoggerService.getInstance().error("LoginForm: Authentication error", {
+          error: authError.message,
+        });
         setGeneralError(authError.message);
         return;
       }
@@ -82,10 +85,15 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
               refresh_token: data.session.refresh_token,
             });
           } catch (err) {
-            console.error("LoginForm: Error setting session manually:", err);
+            LoggerService.getInstance().error(
+              "LoginForm: Error setting session manually",
+              {
+                error: err instanceof Error ? err.message : String(err),
+              },
+            );
           }
         }
-        
+
         // Dodaj małe opóźnienie przed przekierowaniem, aby dać czas na zapisanie sesji
         setTimeout(() => {
           // Redirect to returnTo or home page
@@ -93,7 +101,9 @@ export default function LoginForm({ returnTo = "/generate" }: LoginFormProps) {
         }, 500);
       }
     } catch (err) {
-      console.error("LoginForm: Unexpected error:", err);
+      LoggerService.getInstance().error("LoginForm: Unexpected error", {
+        error: err instanceof Error ? err.message : String(err),
+      });
       setGeneralError("An unexpected error occurred");
     } finally {
       setIsLoading(false);

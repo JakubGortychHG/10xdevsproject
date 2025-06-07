@@ -23,9 +23,7 @@ if (reason === "logout") {
 
 // TEMPORARY FIX: Don't check if user is logged in on login page
 // This prevents false redirects due to potentially invalid cookies
-console.log(
-  "DEBUG: Login page - skipping user check to prevent false redirects",
-);
+// SECURITY: Removed debug console.log to prevent log pollution
 ---
 
 <Layout title="Logowanie - 10xCards">

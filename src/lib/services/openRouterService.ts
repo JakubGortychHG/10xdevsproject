@@ -295,10 +295,13 @@ export class OpenRouterService {
         ...params.params,
       };
 
-      console.log(
-        "OpenRouter request body:",
-        JSON.stringify(requestBody, null, 2),
-      );
+      // Log only safe metadata, never the actual content
+      console.log("OpenRouter request:", {
+        model: requestBody.model,
+        messageCount: requestBody.messages?.length || 0,
+        hasResponseFormat: !!requestBody.response_format,
+        stream: requestBody.stream || false,
+      });
 
       if (requestBody.stream) {
         const response = await this.handleStreamingChat(requestBody);
@@ -311,25 +314,31 @@ export class OpenRouterService {
 
       const response = await this.makeRequest("/chat/completions", requestBody);
 
-      // Safely log response data without circular references
-      console.log("OpenRouter raw response:", {
+      // Log only safe response metadata, never the actual content
+      console.log("OpenRouter response:", {
         status: response?.status,
         statusText: response?.statusText,
-        headers: response?.headers,
-        data: response?.data,
+        hasData: !!response?.data,
+        dataType: typeof response?.data,
       });
 
       if (!response || !response.data) {
         console.error("No data in response. Response info:", {
           status: response?.status,
           statusText: response?.statusText,
-          headers: response?.headers,
         });
         throw new OpenRouterFormatError("No data in API response");
       }
 
       const parsedResponse = this.parseResponse(response.data);
-      console.log("OpenRouter parsed response:", parsedResponse);
+      // Log only safe response metadata, never the actual AI response content
+      console.log("OpenRouter parsed response:", {
+        id: parsedResponse.id,
+        model: parsedResponse.model,
+        choicesCount: parsedResponse.choices?.length || 0,
+        hasUsage: !!parsedResponse.usage,
+        totalTokens: parsedResponse.usage?.total_tokens || 0,
+      });
 
       if (parsedResponse.usage) {
         const cost = await this.estimateRequestCost(params.messages);
@@ -384,11 +393,11 @@ export class OpenRouterService {
       console.log(`Making request to ${endpoint}...`);
       const response = await this.makeRequestWithRetry(endpoint, data);
 
-      // Safely log response info
+      // Log only safe response info, never headers (may contain tokens)
       console.log(`Response info:`, {
         status: response.status,
         statusText: response.statusText,
-        headers: Object.fromEntries(Object.entries(response.headers)),
+        hasHeaders: !!response.headers,
       });
 
       if (!response.data) {
@@ -398,7 +407,7 @@ export class OpenRouterService {
 
       return response;
     } catch (error) {
-      // Safely log error details
+      // Log error details without sensitive data
       console.error(`Request to ${endpoint} failed:`, {
         name: error instanceof Error ? error.name : "Unknown error",
         message: error instanceof Error ? error.message : String(error),
@@ -406,10 +415,8 @@ export class OpenRouterService {
           ? {
               status: error.response?.status,
               statusText: error.response?.statusText,
-              data: error.response?.data,
-              headers: error.response?.headers
-                ? Object.fromEntries(Object.entries(error.response.headers))
-                : undefined,
+              hasData: !!error.response?.data,
+              hasHeaders: !!error.response?.headers,
             }
           : undefined,
       });

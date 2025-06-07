@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { AuthService } from "../../../lib/services/authService";
+import { LoggerService } from "../../../lib/services/loggerService";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -46,7 +47,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Login error:", error);
+    LoggerService.getInstance().error("Login error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return new Response(JSON.stringify({ error: "Authentication failed" }), {
       status: 500,
     });
