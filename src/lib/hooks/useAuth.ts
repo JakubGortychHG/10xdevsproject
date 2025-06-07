@@ -13,7 +13,7 @@ declare global {
 export function useAuth() {
   // Ref do śledzenia, czy dane pochodzą z serwera
   const isServerDataRef = useRef(false);
-  
+
   // Inicjalizujemy stan użytkownika danymi wstrzykniętymi przez serwer, jeśli istnieją
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window !== "undefined" && window.__USER_DATA__) {
@@ -22,7 +22,7 @@ export function useAuth() {
     }
     return null;
   });
-  
+
   const [isLoading, setIsLoading] = useState(true);
 
   const supabaseUrl = PUBLIC_SUPABASE_URL;
@@ -54,11 +54,11 @@ export function useAuth() {
           setIsLoading(false);
           return;
         }
-        
+
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        
+
         if (session?.user) {
           setUser(session.user);
           isServerDataRef.current = false; // Oznacz, że używamy danych z sesji
@@ -89,7 +89,7 @@ export function useAuth() {
       if (event === "INITIAL_SESSION" && isServerDataRef.current) {
         return;
       }
-      
+
       if (session?.user) {
         setUser(session.user);
         isServerDataRef.current = false; // Oznacz, że używamy danych z sesji
@@ -105,7 +105,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase.auth]);
 
   const signOut = async () => {
     setIsLoading(true);
@@ -116,7 +116,7 @@ export function useAuth() {
       // Clear any local state
       setUser(null);
       isServerDataRef.current = false;
-      
+
       // Wyczyść dane użytkownika wstrzyknięte przez serwer
       if (typeof window !== "undefined") {
         window.__USER_DATA__ = null;

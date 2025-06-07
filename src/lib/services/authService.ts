@@ -54,7 +54,7 @@ export class AuthService {
   ): Promise<{ user: User; session: Session }> {
     try {
       this.logger.debug("AuthService: Attempting sign in", { email });
-      
+
       const { data, error } = await this.supabase.auth.signInWithPassword({
         email,
         password,
@@ -70,7 +70,7 @@ export class AuthService {
         throw new AuthError("Authentication failed");
       }
 
-      this.logger.debug("AuthService: Sign in successful", { 
+      this.logger.debug("AuthService: Sign in successful", {
         email: data.user.email,
       });
 
@@ -87,14 +87,14 @@ export class AuthService {
   public async signOut(): Promise<void> {
     try {
       this.logger.debug("AuthService: Attempting sign out");
-      
+
       const { error } = await this.supabase.auth.signOut();
 
       if (error) {
         this.logger.error("Sign out failed", { error });
         throw new AuthError("Failed to sign out");
       }
-      
+
       this.logger.debug("AuthService: Sign out successful");
     } catch (error) {
       this.logger.error("Unexpected error during sign out", { error });
@@ -105,7 +105,7 @@ export class AuthService {
   public async getUser(): Promise<User | null> {
     try {
       this.logger.debug("AuthService: Retrieving user");
-      
+
       const {
         data: { user },
         error,
@@ -120,7 +120,7 @@ export class AuthService {
         hasUser: !!user,
         email: user?.email,
       });
-      
+
       return user;
     } catch (error) {
       this.logger.error("Unexpected error while getting user", { error });

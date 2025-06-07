@@ -49,10 +49,10 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
         if (user) {
           locals.user = user;
         }
-      } catch (error) {
+      } catch {
         // Ignore errors for public paths
       }
-      
+
       return next();
     }
 
