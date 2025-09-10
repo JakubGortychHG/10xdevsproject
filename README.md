@@ -1,4 +1,4 @@
-# 10xCards
+# 10xCards by Jakub Gortych
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/Node.js-v22.14.0-green.svg)](https://nodejs.org/)
